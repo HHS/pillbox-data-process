@@ -64,9 +64,9 @@ def makeCSV(xmlData):
 			else:
 				dataRow.append(x['data'][h].rstrip("\n\r ").encode('ascii','ignore'))
 		dataWriter.writerow(dataRow)
-		ingredientsRow = []
 		if x['ingredients']:
 			for a in x['ingredients']:
+				ingredientsRow = []
 				for i in ingredientsHeader:
 					idCodes = x['setid_product'].split("-")
 					setid = "-".join(idCodes[:-2])
@@ -82,7 +82,7 @@ def makeCSV(xmlData):
 							ingredientsRow.append("")
 					else:
 						try:
-							ingredientsRow.append(";".join(a[i]).encode('ascii','ignore'))
+							ingredientsRow.append(a[i].encode('ascii','ignore'))
 						except:
 							ingredientsRow.append("")
 			ingredientsWriter.writerow(ingredientsRow)

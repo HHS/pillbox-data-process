@@ -36,10 +36,6 @@ def xmlProcess(fn):
 
 		for x in xmlData:
 			rxnormData = rxNorm(x['ndc_codes'])
-			if rxnormData is None:
-				print x
-				print x['ndc_codes']
-				print rxnormData
 			x['data']['rxcui'] = rxnormData['rxcui']
 			x['data']['rxtty'] = rxnormData['rxtty']
 			x['data']['rxstring'] = rxnormData['rxstring']
