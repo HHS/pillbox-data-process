@@ -76,8 +76,9 @@ echo "original file unzipped to /tmp-original"
 FILES=*.zip
 for f in $FILES
 do 
-	unzip -qo $f -d ../tmp-unzipped -x *.jpg *.JPG
-	# not including image file for now
+	ID=$(zipinfo -1 $f "*.xml" | sed 's/....$//')
+	unzip -Cqo $f "*.xml" -d ../tmp-unzipped
+	unzip -Cqo $f "*.jpg" -d ../tmp-unzipped/$ID
 done
 echo "all files unzipped."
 echo "processing complete."
