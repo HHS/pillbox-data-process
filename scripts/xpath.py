@@ -115,194 +115,251 @@ def parseData(name):
 	doses = []
 	# codes stores product_codes, to determine how many unique products \to output with len(codes)
 	codes = []
-	
+	productCodes = []
+	partNumbers = []
+
 	for parent in getelements(name, "{urn:hl7-org:v3}manufacturedProduct", 'yes'):
-		# There are <manufacturedProduct> elements that have no content and would result
-		# in empty objects being appended to ingredients array. So use ingredientTrue to test.
-		ingredientTrue = 0
-		active = []
-		inactive = []
+
 		equalProdCodes = ''
 		# Get equal product code from <definingMaterialKind>
 		try:
 			equalProdParent = parent.xpath(".//*[local-name() = 'definingMaterialKind']")
-			for child in equalProdParent[0].iterchildren(): 
+			for child in equalProdParent[0].iterchildren():
 				if child.get('code') not in equalProdCodes:
 					equalProdCodes = child.get('code')
-		except: 
+		except:
 			equalProdCodes = ''
-		# Get code, name and formCode for each manufacturedProduct
-		# To do: Abstract the three for loops below into a function
-		for child in parent.iterchildren('{urn:hl7-org:v3}code'):
-			# Send product_code to codes array so we can know how many product arrays to output with len(codes)
-			codes.append(child.get('code'))
-		for child in parent.iterchildren('{urn:hl7-org:v3}name'):
-			names.append(child.text)
-		for child in parent.iterchildren('{urn:hl7-org:v3}formCode'):
-			# Check to see if code in codeChecks array
-			if child.get('code') not in codeChecks:
-				# Exit function and move onto next XML within master.py if code not in codeCheck array
-				sys.exit("Not OSDF")
-			else:
-				formCodes.append(child.get('code'))
-		# Send code, name and formCode to info = {}
-		info['product_code'] = codes
-		info['product_name'] = names
-		info['form_code'] = formCodes
-		
 
-		# Get <containerPackagedProduct> information
-		packageProducts = []
-		for child in parent.xpath("./*[local-name() = 'asContent']"):
-			# Check if we're working with <containerPackagedProduct> or <containerPackagedMedicine>
-			checkMedicine =  child.xpath("./*[local-name() = 'containerPackagedMedicine']")
-			checkProduct =  child.xpath("./*[local-name() = 'containerPackagedProduct']")
-			if len(checkProduct) != 0:
-				productType = 'containerPackagedProduct'
-			else:
-				productType = 'containerPackagedMedicine'
-			# Send product 
-			for grandChild in child.xpath("./*[local-name() = '"+productType+"']"):
-				value = grandChild.xpath("./*[local-name() = 'code']")
-				# For when there is another <containerPackagedProduct> nested under another <asContent>
-				if value[0].get('code') == None:
-					subElement = grandChild.xpath(".//*[local-name() = 'asContent']")
-					# subValues is an array of all <code> tags under the second instance of <asContent> 
-					subValues = subElement[0].xpath(".//*[local-name() = 'code']")
-					tempCodes = []
-					# Loop through returned values, which come from multiple levels of <containerPackagedProducts>
-					for v in subValues:
-						if v.get('code') != None:
-							packageProducts.append(v.get('code'))
-				# Else just print the value from the first <containerPackagedProduct> level
+		def proceed(partCode, partChild, index):
+			# There are <manufacturedProduct> elements that have no content and would result
+			# in empty objects being appended to ingredients array. So use ingredientTrue to test.
+			ingredientTrue = 0
+
+			# Get code, name and formCode for each manufacturedProduct
+			# To do: Abstract the three for loops below into a function
+			for child in parent.iterchildren('{urn:hl7-org:v3}code'):
+				# Send product code and part code to codes array so we can know how many product arrays to output, with len(codes)
+				if partCode == 'zero':
+					uniqueCode = child.get('code') + '-0'
+					partNumbers.append('0')
+				else: 
+					uniqueCode = child.get('code') + '-'+str(index)
+					partNumbers.append(str(index))
+				if uniqueCode not in codes:
+					codes.append(uniqueCode)
+					productCodes.append(child.get('code'))
+			for child in parent.iterchildren('{urn:hl7-org:v3}name'):
+				names.append(child.text)
+			for child in parent.iterchildren('{urn:hl7-org:v3}formCode'):
+				# If there are no <parts>, check to see if code in codeChecks array
+				# Only check <manufacturedProduct> level <formCode> against codeChecks if there are no parts
+				if partCode == 'zero':
+					if child.get('code') not in codeChecks:
+						# This applies when there are no <parts>, exit function and move
+						# onto next XML within master.py if code not in codeCheck array
+						#sys.exit("Not OSDF")
+						pass
+					else:
+						formCodes.append(child.get('code'))
+				else: 
+					formCodes.append(child.get('code'))
+
+			# Send code, name and formCode to info = {}
+			info['product_code'] = productCodes
+			info['part_num'] = partNumbers
+			info['product_name'] = names
+			info['form_code'] = formCodes
+
+			# Get <containerPackagedProduct> information
+			packageProducts = []
+			for child in parent.xpath("./*[local-name() = 'asContent']"):
+				# Check if we're working with <containerPackagedProduct> or <containerPackagedMedicine>
+				checkMedicine =  child.xpath("./*[local-name() = 'containerPackagedMedicine']")
+				checkProduct =  child.xpath("./*[local-name() = 'containerPackagedProduct']")
+				if len(checkProduct) != 0:
+					productType = 'containerPackagedProduct'
 				else:
-					packageProducts.append(value[0].get('code'))
-		# The getElements() function captures <manufacturedProduct> and </manufacturedProduct>, which is what
-		# we're seeing when pacakageProducts has length zero
-		if len(packageProducts) != 0:
-			info['NDC'].append(packageProducts)
+					productType = 'containerPackagedMedicine'
+				# Send product
+				for grandChild in child.xpath("./*[local-name() = '"+productType+"']"):
+					value = grandChild.xpath("./*[local-name() = 'code']")
+					# For when there is another <containerPackagedProduct> nested under another <asContent>
+					if value[0].get('code') == None:
+						subElement = grandChild.xpath(".//*[local-name() = 'asContent']")
+						# subValues is an array of all <code> tags under the second instance of <asContent>
+						if len(subElement) != 0:
+							subValues = subElement[0].xpath(".//*[local-name() = 'code']")
+							tempCodes = []
+							# Loop through returned values, which come from multiple levels of <containerPackagedProducts>
+							for v in subValues:
+								if v.get('code') != None:
+									packageProducts.append(v.get('code'))
+					# Else just print the value from the first <containerPackagedProduct> level
+					else:
+						packageProducts.append(value[0].get('code'))
 
-		for child in parent.iterchildren('{urn:hl7-org:v3}ingredient'):
-			# Create temporary object for each ingredient
-			ingredientTemp = {}
-			ingredientTemp['ingredient_type'] = {}
-			ingredientTemp['substance_code'] = {}
+			# The getElements() function captures <manufacturedProduct> and </manufacturedProduct>, which is what
+			# we're seeing when pacakageProducts has length zero
+			if len(packageProducts) != 0:
+				info['NDC'].append(packageProducts)
 
-			# If statement to find active ingredients
-			if child.get('classCode') == 'ACTIB' or child.get('classCode') == 'ACTIM':
-				ingredientTrue = 1
-				ingredientTemp['active_moiety_names'] = []
 
-				for grandChild in child.iterchildren('{urn:hl7-org:v3}ingredientSubstance'):
-					for c in grandChild.iterchildren():
-						ingredientTemp['ingredient_type'] = 'active'
-						if c.tag == '{urn:hl7-org:v3}name':
-							active.append(c.text)
-							ingredientTemp['substance_name'] = c.text
-						if c.tag == '{urn:hl7-org:v3}code':
-							ingredientTemp['substance_code'] = c.get('code')
-						if c.tag =='{urn:hl7-org:v3}activeMoiety':
-							name = c.xpath(".//*[local-name() = 'name']")
-							# Send active moiety to ingredientTemp
-							ingredientTemp['active_moiety_names'].append(name[0].text)
-
-			# If statement to find inactive ingredients
-			if child.get('classCode') == 'IACT':
-				ingredientTrue = 1
-				# Create object for each inactive ingredient
-				for grandChild in child.iterchildren('{urn:hl7-org:v3}ingredientSubstance'):
-					for c in grandChild.iterchildren():
-						ingredientTemp['ingredient_type'] = 'inactive'
-
-						if c.tag == '{urn:hl7-org:v3}name':
-							inactive.append(c.text)
-							ingredientTemp['substance_name'] = c.text
-
-						if c.tag == '{urn:hl7-org:v3}code':
-							ingredientTemp['substance_code'] = c.get('code')
-
-			for grandChild in child.iterchildren('{urn:hl7-org:v3}quantity'):
-				numerator = grandChild.xpath("./*[local-name() = 'numerator']")
-				denominator = grandChild.xpath("./*[local-name() = 'denominator']")
-				
-				ingredientTemp['numerator_unit'] = numerator[0].get('unit')
-				ingredientTemp['numerator_value'] = numerator[0].get('value')
-				ingredientTemp['dominator_unit'] = denominator[0].get('unit')
-				ingredientTemp['dominator_value'] = denominator[0].get('value')
-
-			# Append temporary object to ingredients array
-			if ingredientTemp['ingredient_type'] == 'inactive' and ingredientTemp['substance_code'] not in substanceCodes:
-				substanceCodes.append(ingredientTemp['substance_code'])
-				ingredients.append(ingredientTemp)
-			if ingredientTemp['ingredient_type'] == 'active' and ingredientTemp['substance_code'] not in doses:
-				substanceCodes.append(ingredientTemp['substance_code'])
-				ingredients.append(ingredientTemp)
-				doses.append(ingredientTemp['numerator_value'])
-
-		# If ingredientTrue was set to 1 above, we know we have ingredient information to append
-		if ingredientTrue != 0:
-			info['equal_product_code'].append(equalProdCodes)
-			info['SPL_INGREDIENTS'].append(active)
-			info['SPL_INACTIVE_ING'].append(inactive)
-		# Second set of child elements in <manufacturedProduct> used for ProdMedicines array
-		def checkForValues(type, grandChild):
-			value = grandChild.xpath("./*[local-name() = 'value']")
-			reference = grandChild.xpath(".//*[local-name() = 'reference']")
-			if type == 'SPLIMPRINT':
-				value = value[0].text
+			# Arrays for ingredients
+			active = []
+			inactive = []
+			# If partCode is zero, we can find the ingredients directly below the <manufacturedProduct> parent
+			# else we need to iterate thorugh the <partProduct> of the <part>, from proceed() function
+			if partCode == 'zero':
+				level = parent
 			else:
-				value = value[0].attrib
-			kind = grandChild.find("./{urn:hl7-org:v3}code[@code='"+type+"']")
-			if kind !=None:
+				partProduct = partChild.xpath("./*[local-name() = 'partProduct']")
+				level = partProduct[0]
+
+			for child in level.iterchildren('{urn:hl7-org:v3}ingredient'):
+				# Create temporary object for each ingredient
+				ingredientTemp = {}
+				ingredientTemp['ingredient_type'] = {}
+				ingredientTemp['substance_code'] = {}
+
+				# If statement to find active ingredients
+				if child.get('classCode') == 'ACTIB' or child.get('classCode') == 'ACTIM':
+					ingredientTrue = 1
+					ingredientTemp['active_moiety_names'] = []
+
+					for grandChild in child.iterchildren('{urn:hl7-org:v3}ingredientSubstance'):
+						for c in grandChild.iterchildren():
+							ingredientTemp['ingredient_type'] = 'active'
+							if c.tag == '{urn:hl7-org:v3}name':
+								active.append(c.text)
+								ingredientTemp['substance_name'] = c.text
+							if c.tag == '{urn:hl7-org:v3}code':
+								ingredientTemp['substance_code'] = c.get('code')
+							if c.tag =='{urn:hl7-org:v3}activeMoiety':
+								name = c.xpath(".//*[local-name() = 'name']")
+								# Send active moiety to ingredientTemp
+								ingredientTemp['active_moiety_names'].append(name[0].text)
+
+				# If statement to find inactive ingredients
+				if child.get('classCode') == 'IACT':
+					ingredientTrue = 1
+					# Create object for each inactive ingredient
+					for grandChild in child.iterchildren('{urn:hl7-org:v3}ingredientSubstance'):
+						for c in grandChild.iterchildren():
+							ingredientTemp['ingredient_type'] = 'inactive'
+							if c.tag == '{urn:hl7-org:v3}name':
+								inactive.append(c.text)
+								ingredientTemp['substance_name'] = c.text
+							if c.tag == '{urn:hl7-org:v3}code':
+								ingredientTemp['substance_code'] = c.get('code')
+
+				for grandChild in child.iterchildren('{urn:hl7-org:v3}quantity'):
+					numerator = grandChild.xpath("./*[local-name() = 'numerator']")
+					denominator = grandChild.xpath("./*[local-name() = 'denominator']")
+
+					ingredientTemp['numerator_unit'] = numerator[0].get('unit')
+					ingredientTemp['numerator_value'] = numerator[0].get('value')
+					ingredientTemp['dominator_unit'] = denominator[0].get('unit')
+					ingredientTemp['dominator_value'] = denominator[0].get('value')
+
+				# Append temporary object to ingredients array
+				if ingredientTemp['ingredient_type'] == 'inactive' and ingredientTemp['substance_code'] not in substanceCodes:
+					substanceCodes.append(ingredientTemp['substance_code'])
+					ingredients.append(ingredientTemp)
+				if ingredientTemp['ingredient_type'] == 'active' and ingredientTemp['substance_code'] not in doses:
+					substanceCodes.append(ingredientTemp['substance_code'])
+					ingredients.append(ingredientTemp)
+					doses.append(ingredientTemp['numerator_value'])
+
+			# If ingredientTrue was set to 1 above, we know we have ingredient information to append
+			if ingredientTrue != 0:
+				info['equal_product_code'].append(equalProdCodes)
+				info['SPL_INGREDIENTS'].append(active)
+				info['SPL_INACTIVE_ING'].append(inactive)
+
+			# Second set of child elements in <manufacturedProduct> used for ProdMedicines array
+			def checkForValues(type, grandChild):
+				value = grandChild.xpath("./*[local-name() = 'value']")
+				reference = grandChild.xpath(".//*[local-name() = 'reference']")
 				if type == 'SPLIMPRINT':
-					info[type].append(value)
-				elif type == 'SPLSCORE':
-					if value.get('code') == None:
-						info[type].append('')
+					value = value[0].text
+				else:
+					value = value[0].attrib
+				kind = grandChild.find("./{urn:hl7-org:v3}code[@code='"+type+"']")
+				if kind !=None:
+					if type == 'SPLIMPRINT':
+						info[type].append(value)
+					elif type == 'SPLSCORE':
+						if value.get('code') == None:
+							info[type].append('')
+						else:
+							info[type].append(value.get('code') or value.get('value'))
+					elif type == 'SPLIMAGE':
+						if reference[0].get('value') == None:
+							info[type].append('')
+						else:
+							info[type].append(reference[0].get('value'))
 					else:
 						info[type].append(value.get('code') or value.get('value'))
-				elif type == 'SPLIMAGE':
-					if reference[0].get('value') == None:
-						info[type].append('')
-					else:
-						info[type].append(reference[0].get('value'))
+
+			# If partCode is zero, we can find the <asContent> directly below the <manufacturedProduct> parent
+			# else we need to iterate thorugh the <partProduct> of the <part>, from proceed() function
+			if partCode == 'zero':
+				level = parent
+			else:
+				level = partChild
+			for child in level.iterchildren('{urn:hl7-org:v3}subjectOf'):
+				 # Get approval code
+				try:
+					for grandChild in child.findall("{urn:hl7-org:v3}approval"):
+						statusCode = grandChild.xpath("./*[local-name() = 'code']")
+						info['APPROVAL_CODE'].append(statusCode[0].get('code'))
+				except: 
+					info['APPROVAL_CODE'].append('')
+				#Get marketing act code
+				for grandChild in child.findall("{urn:hl7-org:v3}marketingAct"):
+					statusCode = grandChild.xpath("./*[local-name() = 'statusCode']")
+
+					info['MARKETING_ACT_CODE'].append(statusCode[0].get('code'))
+				# Get policy code
+				for grandChild in child.findall("{urn:hl7-org:v3}policy"):
+					for each in grandChild.iterchildren('{urn:hl7-org:v3}code'):
+						info['DEA_SCHEDULE_CODE'].append(each.get('code'))
+						info['DEA_SCHEDULE_NAME'].append(each.get('displayName'))
+				for grandChild in child.findall("{urn:hl7-org:v3}characteristic"):
+					for each in grandChild.iterchildren('{urn:hl7-org:v3}code'):
+						# Run each type through the CheckForValues() function above
+						type = each.get('code')
+						checkForValues(type, grandChild)
+						each.clear()   #clear memory
+					grandChild.clear() #clear memory
+
+		# Check if there are <parts> in the manufactured product, if not, partCode = 0
+		parts = parent.xpath("./*[local-name() = 'part']")
+		if len(parts) == 0:
+			# No parts found, so part number is zero, send to proceed() function
+			proceed('zero','', '')
+		else:
+			# Set up an index to pass to proceed() function to determine part number
+			index = 0
+			for child in parts:
+				formCode =  child.xpath(".//*[local-name() = 'formCode']")
+				# Check if formCode is in codeChecks
+				if formCode[0].get('code') in codeChecks:
+					# If <part> <formCode> is not in codeChecks, move onto next <part>
+					pass
+				# else send to proceed() function with index
 				else:
-					info[type].append(value.get('code') or value.get('value'))
+					proceed(formCode[0].get('code'), child, index)
+					index = index + 1
 
-
-		for child in parent.iterchildren('{urn:hl7-org:v3}subjectOf'):
-			 # Get approval code
-			try:
-				for grandChild in child.findall("{urn:hl7-org:v3}approval"):
-					statusCode = grandChild.xpath("./*[local-name() = 'code']")
-					info['APPROVAL_CODE'].append(statusCode[0].get('code'))
-			except: 
-				info['APPROVAL_CODE'].append('')
-			#Get marketing act code
-			for grandChild in child.findall("{urn:hl7-org:v3}marketingAct"):
-				statusCode = grandChild.xpath("./*[local-name() = 'statusCode']")
-
-				info['MARKETING_ACT_CODE'].append(statusCode[0].get('code'))
-			# Get policy code
-			for grandChild in child.findall("{urn:hl7-org:v3}policy"):
-				for each in grandChild.iterchildren('{urn:hl7-org:v3}code'):
-					info['DEA_SCHEDULE_CODE'].append(each.get('code'))
-					info['DEA_SCHEDULE_NAME'].append(each.get('displayName'))
-			for grandChild in child.findall("{urn:hl7-org:v3}characteristic"):
-				for each in grandChild.iterchildren('{urn:hl7-org:v3}code'):
-					# Run each type through the CheckForValues() function above
-					type = each.get('code')
-					checkForValues(type, grandChild)
-					each.clear()   #clear memory
-				grandChild.clear() #clear memory	
 	prodMedicines.append(info)
-	
+
 	prodMedNames = ['SPLCOLOR','SPLIMAGE','SPLIMPRINT','product_name','SPLSHAPE','SPL_INGREDIENTS','SPL_INACTIVE_ING',
- 	'SPLSCORE','SPLSIZE','product_code','form_code','MARKETING_ACT_CODE','DEA_SCHEDULE_CODE','DEA_SCHEDULE_NAME','NDC','equal_product_code']
+	'SPLSCORE','SPLSIZE','product_code','part_num','form_code','MARKETING_ACT_CODE','DEA_SCHEDULE_CODE','DEA_SCHEDULE_NAME','NDC','equal_product_code']
 	setInfoNames = ['file_name','effective_time','id_root','date_created','setid','document_type']
 	sponsorNames = ['name']
 
-	# Loop through prodMedicines as many times as there are unique product_codes, which is len(codes)
+	# Loop through prodMedicines as many times as there are unique product codes + part codes combinations, which is len(codes)
 
 	products = []
 	for i in range(0, len(codes)):

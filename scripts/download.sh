@@ -19,12 +19,17 @@ tmpDIR=../tmp/
 cd $tmpDIR
 
 # remove old files
-if [ -f "download/original.zip" ]; then
-	rm download/original.zip
-fi
-echo "removed original download"
+tmpDownload=download/
+cd $tmpDownload
+for f in *.zip;
+do
+	if [ -f $f ]; then
+		rm $f
+	fi
+done
+echo "removed original downloads"
 
-tmpOriginal=tmp-original/
+tmpOriginal=../tmp-original/
 cd $tmpOriginal
 for f in *.zip;
 do
@@ -70,7 +75,7 @@ unzip -qj ../download/dm_spl_release_homeopathic.zip
 unzip -qj ../download/dm_spl_release_animal.zip
 unzip -qj ../download/dm_spl_release_remainder.zip
 
-echo "original file unzipped to /tmp-original"
+echo "original files unzipped to /tmp-original"
 
 # loop through all individual zipped files to unzip
 FILES=*.zip
@@ -82,7 +87,6 @@ do
 done
 echo "all files unzipped."
 echo "processing complete."
-# now all original XML files are located in the /tmp-original/[today's date] folder
 ENDTIME=$(date +%s)
 TOTALTIME=$((($ENDTIME-$STARTTIME)/60))
 echo "Processing took $TOTALTIME minutes to complete."
