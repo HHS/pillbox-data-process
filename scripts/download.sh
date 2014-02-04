@@ -83,7 +83,6 @@ for f in $FILES
 do 
 	ID=$(zipinfo -1 $f "*.xml" | sed 's/....$//')
 	unzip -Cqo $f "*.xml" -d ../tmp-unzipped
-	unzip -Cqo $f "*.jpg" -d ../tmp-unzipped/$ID
 done
 echo "all files unzipped."
 echo "processing complete."
