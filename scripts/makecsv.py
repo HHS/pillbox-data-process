@@ -61,22 +61,19 @@ def makeCSV(xmlData):
 		dataRow = []
 		for h in dataHeader:
 			if h == 'SPL_INACTIVE_ING':
-				dataRow.append(";".join(x['data'][h]).rstrip("\n\r ").encode('ascii','ignore'))
+				dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
 			elif h == 'NDC':
-				dataRow.append(";".join(x['data'][h]).rstrip("\n\r ").encode('ascii','ignore'))
+				dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
 			elif h == 'SPL_INGREDIENTS':
-				dataRow.append(";".join(x['data'][h]).rstrip("\n\r ").encode('ascii','ignore'))
+				dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
 			elif h == 'SPL_STRENGTH':
-				dataRow.append(";".join(x['data'][h]).rstrip("\n\r ").encode('ascii','ignore'))
+				dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
 			elif h == 'part_num':
 				dataRow.append(x['data'][h])
 			elif h == 'product_name':
-				dataRow.append(";".join(x['data'][h]).lstrip("\n\r ").rstrip("\n\r ").encode('ascii','ignore'))
+				dataRow.append(x['data'][h].encode('ascii','ignore'))
 			else:
-				try: 
-					dataRow.append(x['data'][h].rstrip("\n\r ").encode('ascii','ignore'))
-				except:
-					dataRow.append(x['data'][h].encode('ascii','ignore'))
+				dataRow.append(x['data'][h].encode('ascii','ignore'))
 		dataWriter.writerow(dataRow)
 		if x['ingredients']:
 			for a in x['ingredients']:

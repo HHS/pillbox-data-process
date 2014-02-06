@@ -68,14 +68,14 @@ def parseData(name):
 	for parent in getelements(name, "{urn:hl7-org:v3}author", 'no'):
 		for child in parent.iter('{urn:hl7-org:v3}representedOrganization'):
 			for grandChild in child.iterchildren('{urn:hl7-org:v3}name'):
-				sponsors['name'] = grandChild.text
+				sponsors['name'] = grandChild.text.strip()
 				sponsors['author_type'] = 'labler'
 				grandChild.clear()
 
 	for parent in getelements(name, "{urn:hl7-org:v3}legalAuthenticator", 'no'):
 		for child in parent.iter('{urn:hl7-org:v3}representedOrganization'):
 			for grandChild in child.iterchildren('{urn:hl7-org:v3}name'):
-				sponsors['name'] = grandChild.text
+				sponsors['name'] = grandChild.text.strip()
 				sponsors['author_type'] = 'legal'
 				grandChild.clear()
 
@@ -137,7 +137,7 @@ def parseData(name):
 			ingredientTrue = 0
 
 			for child in parent.iterchildren('{urn:hl7-org:v3}name'):
-				names.append(child.text)
+				names.append(child.text.strip())
 
 			for formCode in parent.iterchildren('{urn:hl7-org:v3}formCode'):
 				# Only check <manufacturedProduct> level <formCode> against codeChecks if there are no parts
@@ -236,15 +236,15 @@ def parseData(name):
 						for c in grandChild.iterchildren():
 							ingredientTemp['ingredient_type'] = 'active'
 							if c.tag == '{urn:hl7-org:v3}name':
-								active.append(c.text)
-								splStrengthItem = c.text
-								ingredientTemp['substance_name'] = c.text
+								active.append(c.text.strip())
+								splStrengthItem = c.text.strip()
+								ingredientTemp['substance_name'] = c.text.strip()
 							if c.tag == '{urn:hl7-org:v3}code':
 								ingredientTemp['substance_code'] = c.get('code')
 							if c.tag =='{urn:hl7-org:v3}activeMoiety':
 								name = c.xpath(".//*[local-name() = 'name']")
 								# Send active moiety to ingredientTemp
-								ingredientTemp['active_moiety_names'].append(name[0].text)
+								ingredientTemp['active_moiety_names'].append(name[0].text.strip())
 					
 					for grandChild in child.iterchildren('{urn:hl7-org:v3}quantity'):
 						numerator = grandChild.xpath("./*[local-name() = 'numerator']")
@@ -266,8 +266,8 @@ def parseData(name):
 						for c in grandChild.iterchildren():
 							ingredientTemp['ingredient_type'] = 'inactive'
 							if c.tag == '{urn:hl7-org:v3}name':
-								inactive.append(c.text)
-								ingredientTemp['substance_name'] = c.text
+								inactive.append(c.text.strip())
+								ingredientTemp['substance_name'] = c.text.strip()
 							if c.tag == '{urn:hl7-org:v3}code':
 								ingredientTemp['substance_code'] = c.get('code')
 				
@@ -285,7 +285,7 @@ def parseData(name):
 				value = grandChild.xpath("./*[local-name() = 'value']")
 				reference = grandChild.xpath(".//*[local-name() = 'reference']")
 				if type == 'SPLIMPRINT':
-					value = value[0].text
+					value = value[0].text.strip()
 				else:
 					value = value[0].attrib
 				kind = grandChild.find("./{urn:hl7-org:v3}code[@code='"+type+"']")
@@ -301,7 +301,8 @@ def parseData(name):
 						if reference[0].get('value') == None:
 							info[type].append('')
 						else:
-							info[type].append(reference[0].get('value'))
+							splfile = reference[0].get('value').split()
+							info[type].append(splfile)
 					else:
 						info[type].append(value.get('code') or value.get('value'))
 
@@ -381,7 +382,11 @@ def parseData(name):
 			for name in prodMedNames: 
 				# Get information at the correct index 
 				try:
-					tempProduct[name] = prodMedicines[0][name][i]
+					if name == 'SPLIMAGE':
+						image_file = setInfo['id_root'] + '_' + prodMedicines[0]['product_code'][i] + '_' + prodMedicines[0]['part_num'][i] + '_' + "_".join(prodMedicines[0][name][i])
+						tempProduct[name] = image_file
+					else:
+						tempProduct[name] = prodMedicines[0][name][i]
 				except:
 					tempProduct[name] = ''
 			for name in setInfoNames: 
@@ -400,5 +405,5 @@ def parseData(name):
 		sys.exit("Not OSDF")
 
 if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/0003458f-352a-46fa-9d99-230daa76ae29.xml")
+	test = parseData("../tmp/tmp-unzipped/07374135-f407-4d91-901f-a60fc51f7d9e.xml")
 	print test
