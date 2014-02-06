@@ -69,21 +69,21 @@ def parseData(name):
 		for child in parent.iter('{urn:hl7-org:v3}representedOrganization'):
 			for grandChild in child.iterchildren('{urn:hl7-org:v3}name'):
 				sponsors['name'] = grandChild.text
-				sponsors['sponsor_type'] = 'labler'
+				sponsors['author_type'] = 'labler'
 				grandChild.clear()
 
 	for parent in getelements(name, "{urn:hl7-org:v3}legalAuthenticator", 'no'):
 		for child in parent.iter('{urn:hl7-org:v3}representedOrganization'):
 			for grandChild in child.iterchildren('{urn:hl7-org:v3}name'):
 				sponsors['name'] = grandChild.text
-				sponsors['sponsor_type'] = 'legal'
+				sponsors['author_type'] = 'legal'
 				grandChild.clear()
 
 	# -----------------------------------------
 	# Build ProdMedicine and Ingredients arrays
 	# -----------------------------------------
 	prodMedicines = []
-	ingredients = []
+	ingredients = {}
 	formCodes = []
 	names = []
 	# info object, which will later be appended to prodMedicines array
@@ -100,6 +100,7 @@ def parseData(name):
 	info['IMAGE_SOURCE'] = []
 	info['SPL_INGREDIENTS'] = []
 	info['SPL_INACTIVE_ING'] = []
+	info['SPL_STRENGTH'] = []
 	info['SPLCONTAINS'] = []
 	info['APPROVAL_CODE'] = []
 	info['MARKETING_ACT_CODE'] = []
@@ -135,34 +136,38 @@ def parseData(name):
 			# in empty objects being appended to ingredients array. So use ingredientTrue to test.
 			ingredientTrue = 0
 
-			# Get code, name and formCode for each manufacturedProduct
-			# To do: Abstract the three for loops below into a function
-			for child in parent.iterchildren('{urn:hl7-org:v3}code'):
-				# Send product code and part code to codes array so we can know how many product arrays to output, with len(codes)
-				if partCode == 'zero':
-					uniqueCode = child.get('code') + '-0'
-					partNumbers.append('0')
-				else: 
-					uniqueCode = child.get('code') + '-'+str(index)
-					partNumbers.append(str(index))
-				if uniqueCode not in codes:
-					codes.append(uniqueCode)
-					productCodes.append(child.get('code'))
 			for child in parent.iterchildren('{urn:hl7-org:v3}name'):
 				names.append(child.text)
-			for child in parent.iterchildren('{urn:hl7-org:v3}formCode'):
-				# If there are no <parts>, check to see if code in codeChecks array
+
+			for formCode in parent.iterchildren('{urn:hl7-org:v3}formCode'):
 				# Only check <manufacturedProduct> level <formCode> against codeChecks if there are no parts
 				if partCode == 'zero':
-					if child.get('code') not in codeChecks:
-						# This applies when there are no <parts>, exit function and move
-						# onto next XML within master.py if code not in codeCheck array
-						#sys.exit("Not OSDF")
-						pass
+					# Only get product code if form code is in codeChecks
+					if formCode.get('code') not in codeChecks:
+						# This applies when there are no <parts>, if code not in codeCheck array, pass this <manufacturedProduct> and move
+						# onto next  <manufacturedProduct>  
+						sys.exit("Not OSDF")
 					else:
-						formCodes.append(child.get('code'))
-				else: 
-					formCodes.append(child.get('code'))
+						for productCode in parent.iterchildren('{urn:hl7-org:v3}code'):
+							uniqueCode = productCode.get('code') + '-0'
+							formCodes.append(formCode.get('code'))
+							# set ingredients array for uniquecode
+							ingredients[uniqueCode] = []
+							if uniqueCode not in codes:
+								codes.append(uniqueCode)
+								productCodes.append(productCode.get('code'))
+								partNumbers.append('0')
+				else:
+					# This applies only to <parts>
+					for productCode in parent.iterchildren('{urn:hl7-org:v3}code'):
+						uniqueCode = productCode.get('code') + '-'+str(index)
+						formCodes.append(formCode.get('code'))
+						# set ingredients array for uniquecode
+						ingredients[uniqueCode] = []
+						if uniqueCode not in codes:
+							codes.append(uniqueCode)
+							productCodes.append(productCode.get('code'))
+							partNumbers.append(index)
 
 			# Send code, name and formCode to info = {}
 			info['product_code'] = productCodes
@@ -207,6 +212,7 @@ def parseData(name):
 			# Arrays for ingredients
 			active = []
 			inactive = []
+			splStrength = []
 			# If partCode is zero, we can find the ingredients directly below the <manufacturedProduct> parent
 			# else we need to iterate thorugh the <partProduct> of the <part>, from proceed() function
 			if partCode == 'zero':
@@ -231,6 +237,7 @@ def parseData(name):
 							ingredientTemp['ingredient_type'] = 'active'
 							if c.tag == '{urn:hl7-org:v3}name':
 								active.append(c.text)
+								splStrengthItem = c.text
 								ingredientTemp['substance_name'] = c.text
 							if c.tag == '{urn:hl7-org:v3}code':
 								ingredientTemp['substance_code'] = c.get('code')
@@ -238,6 +245,18 @@ def parseData(name):
 								name = c.xpath(".//*[local-name() = 'name']")
 								# Send active moiety to ingredientTemp
 								ingredientTemp['active_moiety_names'].append(name[0].text)
+					
+					for grandChild in child.iterchildren('{urn:hl7-org:v3}quantity'):
+						numerator = grandChild.xpath("./*[local-name() = 'numerator']")
+						denominator = grandChild.xpath("./*[local-name() = 'denominator']")
+
+						ingredientTemp['numerator_unit'] = numerator[0].get('unit')
+						ingredientTemp['numerator_value'] = numerator[0].get('value')
+						ingredientTemp['dominator_unit'] = denominator[0].get('unit')
+						ingredientTemp['dominator_value'] = denominator[0].get('value')
+						splStrengthValue = float(ingredientTemp['numerator_value']) / float(ingredientTemp['dominator_value'])
+						splStrengthItem = "%s %s %s" % (splStrengthItem, splStrengthValue, ingredientTemp['numerator_unit'])
+						splStrength.append(splStrengthItem)
 
 				# If statement to find inactive ingredients
 				if child.get('classCode') == 'IACT':
@@ -251,30 +270,15 @@ def parseData(name):
 								ingredientTemp['substance_name'] = c.text
 							if c.tag == '{urn:hl7-org:v3}code':
 								ingredientTemp['substance_code'] = c.get('code')
-
-				for grandChild in child.iterchildren('{urn:hl7-org:v3}quantity'):
-					numerator = grandChild.xpath("./*[local-name() = 'numerator']")
-					denominator = grandChild.xpath("./*[local-name() = 'denominator']")
-
-					ingredientTemp['numerator_unit'] = numerator[0].get('unit')
-					ingredientTemp['numerator_value'] = numerator[0].get('value')
-					ingredientTemp['dominator_unit'] = denominator[0].get('unit')
-					ingredientTemp['dominator_value'] = denominator[0].get('value')
-
-				# Append temporary object to ingredients array
-				if ingredientTemp['ingredient_type'] == 'inactive' and ingredientTemp['substance_code'] not in substanceCodes:
-					substanceCodes.append(ingredientTemp['substance_code'])
-					ingredients.append(ingredientTemp)
-				if ingredientTemp['ingredient_type'] == 'active' and ingredientTemp['substance_code'] not in doses:
-					substanceCodes.append(ingredientTemp['substance_code'])
-					ingredients.append(ingredientTemp)
-					doses.append(ingredientTemp['numerator_value'])
+				
+				ingredients[uniqueCode].append(ingredientTemp)
 
 			# If ingredientTrue was set to 1 above, we know we have ingredient information to append
 			if ingredientTrue != 0:
 				info['equal_product_code'].append(equalProdCodes)
 				info['SPL_INGREDIENTS'].append(active)
 				info['SPL_INACTIVE_ING'].append(inactive)
+				info['SPL_STRENGTH'].append(splStrength)
 
 			# Second set of child elements in <manufacturedProduct> used for ProdMedicines array
 			def checkForValues(type, grandChild):
@@ -289,7 +293,7 @@ def parseData(name):
 					if type == 'SPLIMPRINT':
 						info[type].append(value)
 					elif type == 'SPLSCORE':
-						if value.get('code') == None:
+						if value.get('value') == None:
 							info[type].append('')
 						else:
 							info[type].append(value.get('code') or value.get('value'))
@@ -340,11 +344,11 @@ def parseData(name):
 			proceed('zero','', '')
 		else:
 			# Set up an index to pass to proceed() function to determine part number
-			index = 0
+			index = 1
 			for child in parts:
 				formCode =  child.xpath(".//*[local-name() = 'formCode']")
 				# Check if formCode is in codeChecks
-				if formCode[0].get('code') in codeChecks:
+				if formCode[0].get('code') not in codeChecks:
 					# If <part> <formCode> is not in codeChecks, move onto next <part>
 					pass
 				# else send to proceed() function with index
@@ -354,39 +358,47 @@ def parseData(name):
 
 	prodMedicines.append(info)
 
-	prodMedNames = ['SPLCOLOR','SPLIMAGE','SPLIMPRINT','product_name','SPLSHAPE','SPL_INGREDIENTS','SPL_INACTIVE_ING',
-	'SPLSCORE','SPLSIZE','product_code','part_num','form_code','MARKETING_ACT_CODE','DEA_SCHEDULE_CODE','DEA_SCHEDULE_NAME','NDC','equal_product_code']
+	prodMedNames = [
+					'SPLCOLOR','SPLIMAGE','SPLIMPRINT','product_name','SPLSHAPE',
+					'SPL_INGREDIENTS','SPL_INACTIVE_ING','SPLSCORE','SPLSIZE',
+					'product_code','part_num','form_code','MARKETING_ACT_CODE',
+					'DEA_SCHEDULE_CODE','DEA_SCHEDULE_NAME','NDC','equal_product_code',
+					'SPL_STRENGTH'
+					]
 	setInfoNames = ['file_name','effective_time','id_root','date_created','setid','document_type']
-	sponsorNames = ['name']
+	sponsorNames = ['name','author_type']
 
 	# Loop through prodMedicines as many times as there are unique product codes + part codes combinations, which is len(codes)
 
 	products = []
-	for i in range(0, len(codes)):
-		uniqueID = setInfo['id_root'] + '-' + codes[i]
-		product = {}
-		product['setid_product'] = uniqueID
-		product['ndc_codes'] = prodMedicines[0]['NDC'][i]
-		tempProduct = {}
-		for name in prodMedNames: 
-			# Get information at the correct index 
-			try:
-				tempProduct[name] = prodMedicines[0][name][i]
-			except:
-				tempProduct[name] = ''
-		for name in setInfoNames: 
-			tempProduct[name] = setInfo[name]
-		for name in sponsorNames: 
-			try:
-				tempProduct[name] = sponsors[name]
-			except:
-				tempProduct[name] = ''
-		product['data'] = tempProduct 
-		# Ingredients are showing duplicates again leaving out while fixing.  
-		product['ingredients'] = ingredients
-		products.append(product)
-	return products
+	if codes: 
+		for i in range(0, len(codes)):
+			uniqueID = setInfo['id_root'] + '-' + codes[i]
+			product = {}
+			product['setid_product'] = uniqueID
+			product['ndc_codes'] = prodMedicines[0]['NDC'][i]
+			tempProduct = {}
+			for name in prodMedNames: 
+				# Get information at the correct index 
+				try:
+					tempProduct[name] = prodMedicines[0][name][i]
+				except:
+					tempProduct[name] = ''
+			for name in setInfoNames: 
+				tempProduct[name] = setInfo[name]
+			for name in sponsorNames: 
+				try:
+					tempProduct[name] = sponsors[name]
+				except:
+					tempProduct[name] = ''
+			product['data'] = tempProduct
+			# Ingredients are showing duplicates again leaving out while fixing.  
+			product['ingredients'] = ingredients[codes[i]]
+			products.append(product)
+		return products
+	else:
+		sys.exit("Not OSDF")
 
 if __name__ == "__main__":
-	test = parseData("../tmp/20130213_917046f1-4ab9-4ec3-9327-d8ec82f672f1/3abb85b1-2a3f-4106-ae5f-50af72a74723.xml")
+	test = parseData("../tmp/tmp-unzipped/0003458f-352a-46fa-9d99-230daa76ae29.xml")
 	print test

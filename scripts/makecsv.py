@@ -7,6 +7,7 @@ from itertools import chain
 dataHeader = [
 		"setid",
 		"product_code",
+		"part_num",
 		"name",
 		"id_root",
 		"file_name",
@@ -29,12 +30,16 @@ dataHeader = [
         "rxstring",
         "rxtty",
         "equal_product_code",
-        "MARKETING_ACT_CODE"
+        "MARKETING_ACT_CODE",
+        "author_type",
+        "ndc9",
+        "SPL_STRENGTH"
 		]
 
 ingredientsHeader = [
 		"product_code",
 		"setid",
+		"part_num",
 		"numerator_value",
 		"numerator_unit",
 		"denominator_value",
@@ -44,10 +49,10 @@ ingredientsHeader = [
 
 dataOutput = open('../tmp/processed/csv/spl_data.csv', 'wb')
 ingredientsOutput = open('../tmp/processed/csv/spl_ingredients.csv', 'wb')
-dataWriter = csv.writer(dataOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_ALL)
+dataWriter = csv.writer(dataOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
 dataWriter.writerow(dataHeader)
 
-ingredientsWriter = csv.writer(ingredientsOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_ALL)
+ingredientsWriter = csv.writer(ingredientsOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
 ingredientsWriter.writerow(ingredientsHeader)
 
 def makeCSV(xmlData):
@@ -61,31 +66,47 @@ def makeCSV(xmlData):
 				dataRow.append(";".join(x['data'][h]).rstrip("\n\r ").encode('ascii','ignore'))
 			elif h == 'SPL_INGREDIENTS':
 				dataRow.append(";".join(x['data'][h]).rstrip("\n\r ").encode('ascii','ignore'))
+			elif h == 'SPL_STRENGTH':
+				dataRow.append(";".join(x['data'][h]).rstrip("\n\r ").encode('ascii','ignore'))
+			elif h == 'part_num':
+				dataRow.append(x['data'][h])
+			elif h == 'product_name':
+				dataRow.append(";".join(x['data'][h]).lstrip("\n\r ").rstrip("\n\r ").encode('ascii','ignore'))
 			else:
-				dataRow.append(x['data'][h].rstrip("\n\r ").encode('ascii','ignore'))
+				try: 
+					dataRow.append(x['data'][h].rstrip("\n\r ").encode('ascii','ignore'))
+				except:
+					dataRow.append(x['data'][h].encode('ascii','ignore'))
 		dataWriter.writerow(dataRow)
 		if x['ingredients']:
 			for a in x['ingredients']:
-				ingredientsRow = []
-				for i in ingredientsHeader:
-					idCodes = x['setid_product'].split("-")
-					setid = "-".join(idCodes[:-2])
-					product_code = idCodes[-2] + "-" + idCodes[-1]
-					if i == 'product_code':
-						ingredientsRow.append(product_code)
-					elif i == 'setid':
-						ingredientsRow.append(setid)
-					elif i == 'base_of_strength':
-						try: 
-							ingredientsRow.append(";".join(a['active_moiety_names']).encode('ascii','ignore'))
-						except:
-							ingredientsRow.append("")
-					else:
-						try:
-							ingredientsRow.append(a[i].encode('ascii','ignore'))
-						except:
-							ingredientsRow.append("")
-			ingredientsWriter.writerow(ingredientsRow)
+				try: 
+					if a['active_moiety_names']:
+						ingredientsRow = []
+						for i in ingredientsHeader:
+							idCodes = x['setid_product'].split("-")
+							setid = "-".join(idCodes[:-3])
+							product_code = idCodes[-3] + "-" + idCodes[-2]
+							part_num = idCodes[-1]
+							if i == 'product_code':
+								ingredientsRow.append(product_code)
+							elif i == 'setid':
+								ingredientsRow.append(setid)
+							elif i == 'part_num':
+								ingredientsRow.append(part_num)
+							elif i == 'base_of_strength':
+								try: 
+									ingredientsRow.append(";".join(a['active_moiety_names']).encode('ascii','ignore'))
+								except:
+									ingredientsRow.append("")
+							else:
+								try:
+									ingredientsRow.append(a[i].encode('ascii','ignore'))
+								except:
+									ingredientsRow.append("")
+						ingredientsWriter.writerow(ingredientsRow)
+				except:
+					pass
 
 
 def closeCSV():

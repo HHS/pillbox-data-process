@@ -39,6 +39,15 @@ def xmlProcess(fn):
 			x['data']['rxcui'] = rxnormData['rxcui']
 			x['data']['rxtty'] = rxnormData['rxtty']
 			x['data']['rxstring'] = rxnormData['rxstring']
+			try:
+				ndc9 = x['data']['product_code'].split("-")
+				if len(ndc9[0]) < 5:
+					ndc9[0] = "0%s" % ndc9[0]
+				if len(ndc9[1]) < 4:
+					ndc9[1] = "0%s" % ndc9[1]
+				x['data']['ndc9'] = "".join(ndc9)
+			except:
+				x['data']['ndc9'] = ""
 		# Make indidivdual json files per SETID-NDC code
 			writeout = json.dumps(x, sort_keys=True, separators=(',',':'))
 			f_out = open('../processed/%s.json' % x['setid_product'], 'wb')
@@ -82,8 +91,8 @@ main()
 
 # Calculate the total time and print to console. 
 master_t1 = time.time()
-total_time = master_t1-master_t0
+total_time = (master_t1-master_t0)/60
 print file_count, "XML files processed"
 error.errorWrite()
 makecsv.closeCSV()
-print "Processing complete. Total Processing time = %d seconds" % total_time
+print "Processing complete. Total Processing time = %d minutes" % total_time
