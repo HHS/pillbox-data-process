@@ -49,10 +49,10 @@ ingredientsHeader = [
 
 dataOutput = open('../tmp/processed/csv/spl_data.csv', 'wb')
 ingredientsOutput = open('../tmp/processed/csv/spl_ingredients.csv', 'wb')
-dataWriter = csv.writer(dataOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+dataWriter = csv.writer(dataOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_ALL, lineterminator='\n')
 dataWriter.writerow(dataHeader)
 
-ingredientsWriter = csv.writer(ingredientsOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+ingredientsWriter = csv.writer(ingredientsOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_ALL, lineterminator='\n')
 ingredientsWriter.writerow(ingredientsHeader)
 
 def makeCSV(xmlData):
