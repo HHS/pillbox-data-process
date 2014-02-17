@@ -8,6 +8,7 @@
 
 import os, sys, time
 import StringIO
+import atexit
 from lxml import etree
 from itertools import groupby
 
@@ -142,12 +143,9 @@ def parseData(name):
 			for formCode in parent.iterchildren('{urn:hl7-org:v3}formCode'):
 				# Only check <manufacturedProduct> level <formCode> against codeChecks if there are no parts
 				if partCode == 'zero':
-					# Only get product code if form code is in codeChecks
 					if formCode.get('code') not in codeChecks:
-						# This applies when there are no <parts>, if code not in codeCheck array, pass this <manufacturedProduct> and move
-						# onto next  <manufacturedProduct>  
-						sys.exit("Not OSDF")
-					else:
+						pass
+					else: 
 						for productCode in parent.iterchildren('{urn:hl7-org:v3}code'):
 							uniqueCode = productCode.get('code') + '-0'
 							formCodes.append(formCode.get('code'))
@@ -255,6 +253,8 @@ def parseData(name):
 						ingredientTemp['dominator_unit'] = denominator[0].get('unit')
 						ingredientTemp['dominator_value'] = denominator[0].get('value')
 						splStrengthValue = float(ingredientTemp['numerator_value']) / float(ingredientTemp['dominator_value'])
+						if str(splStrengthValue)[-1] == '0':
+							splStrengthValue = int(splStrengthValue)
 						splStrengthItem = "%s %s %s" % (splStrengthItem, splStrengthValue, ingredientTemp['numerator_unit'])
 						splStrength.append(splStrengthItem)
 
@@ -270,8 +270,11 @@ def parseData(name):
 								ingredientTemp['substance_name'] = c.text.strip()
 							if c.tag == '{urn:hl7-org:v3}code':
 								ingredientTemp['substance_code'] = c.get('code')
-				
-				ingredients[uniqueCode].append(ingredientTemp)
+				try: 
+					ingredients[uniqueCode].append(ingredientTemp)
+				except:
+					# this is passed because of no uniqeCode assigned when not OSDF
+					pass
 
 			# If ingredientTrue was set to 1 above, we know we have ingredient information to append
 			if ingredientTrue != 0:
@@ -343,10 +346,14 @@ def parseData(name):
 					for each in grandChild.iterchildren('{urn:hl7-org:v3}code'):
 						# Run each type through the CheckForValues() function above
 						ctype = each.get('code')
+						# checks for duplicate spl types, splcolor can happen twice 
 						if ctype in previous:
 							idx = len(info[ctype]) - 1
 							checkForValues(ctype, grandChild, '1', idx)
 						else:
+							idx = len(info[ctype])
+							if idx < len(codes) - 1:
+								info[ctype].append('')
 							checkForValues(ctype, grandChild, '0', 0)
 						previous.append(ctype)
 						each.clear()   #clear memory
@@ -356,7 +363,7 @@ def parseData(name):
 		parts = parent.xpath("./*[local-name() = 'part']")
 		if len(parts) == 0:
 			# No parts found, so part number is zero, send to proceed() function
-			proceed('zero','', '')
+			proceed('zero','','')
 		else:
 			# Set up an index to pass to proceed() function to determine part number
 			index = 1
@@ -370,7 +377,7 @@ def parseData(name):
 				else:
 					proceed(formCode[0].get('code'), child, index)
 					index = index + 1
-
+	
 	prodMedicines.append(info)
 
 	prodMedNames = [
@@ -419,5 +426,6 @@ def parseData(name):
 		sys.exit("Not OSDF")
 
 if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/d41e5046-3144-4d91-82a3-22a9e7321abd.xml")
-	print test
+	test = parseData("../tmp/tmp-unzipped/2c442c46-c6c1-5b40-d962-b67249742c2d.xml")
+	#test = parseData("../tmp/tmp-unzipped/d41e5046-3144-4d91-82a3-22a9e7321abd.xml")
+	#print test
