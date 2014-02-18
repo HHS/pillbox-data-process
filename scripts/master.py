@@ -50,7 +50,7 @@ def xmlProcess(fn):
 				x['data']['ndc9'] = ""
 		# Make indidivdual json files per SETID-NDC code
 			writeout = json.dumps(x, sort_keys=True, separators=(',',':'))
-			f_out = open('../processed/%s.json' % x['setid_product'], 'wb')
+			f_out = open('../processed/json/%s.json' % x['setid_product'], 'wb')
 			f_out.writelines(writeout)
 			f_out.close()
 		# Make CSV file for output, one row per SETID-NDC code
