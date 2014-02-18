@@ -12,6 +12,7 @@ The process is broken into three phases:
 - [PIP](http://www.pip-installer.org/en/latest/installing.html#install-or-upgrade-pip)
 - `pip install requirements.txt` 
 - unzip (if not on OSX)
+- wget (if not on Ubuntu)
 - 30+GB of free space 
 
 #### 1. Download and Unzip 
