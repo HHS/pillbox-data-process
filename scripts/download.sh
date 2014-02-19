@@ -15,7 +15,6 @@ tmpDIR=../tmp/
 cd $tmpDIR
 
 # Download all Dailymed files 
-cd ../
 wget -O download/$today/dm_spl_release_human_rx_part1.zip ftp://public.nlm.nih.gov/nlmdata/.dailymed/dm_spl_release_human_rx_part1.zip
 wget -O download/$today/dm_spl_release_human_rx_part2.zip ftp://public.nlm.nih.gov/nlmdata/.dailymed/dm_spl_release_human_rx_part2.zip
 wget -O download/$today/dm_spl_release_human_otc_part1.zip ftp://public.nlm.nih.gov/nlmdata/.dailymed/dm_spl_release_human_otc_part1.zip
