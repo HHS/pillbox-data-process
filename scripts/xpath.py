@@ -12,6 +12,13 @@ import atexit
 from lxml import etree
 from itertools import groupby
 
+sourcesCodes = {
+	'34391-3': 'HRX',
+	'34390-5':'HOTC',
+	'50578-4':'ANIMALHRX',
+	'50577-6':'ANIMALOTC'
+	}
+
 # Check all XMLs against form codes, discard all XMLs that don't match
 codeChecks = [
 	"C25158", "C42895", "C42896",
@@ -29,21 +36,23 @@ codeChecks = [
 print "processing XML with XPATH..."
 
 def parseData(name):
-
 	# Iterparse function that clears the memory each time it finishes running
 	def getelements(filename, tag, medicineCheck):
-		context = iter(etree.iterparse(filename, events=('start', 'end')))
+		context = iter(etree.iterparse(filename))
 		_, root = next(context) # get root element
 		for event, elem in context:
-			# If we pass "yes" via medicineCheck, then we need to return <manufacturedMedicine> instead of <manufacturedProduct> 
-			if medicineCheck == 'yes':
-				if event == 'end' and elem.tag == "{urn:hl7-org:v3}manufacturedMedicine":
-					yield elem
-				elif event == 'end' and elem.tag == '{urn:hl7-org:v3}manufacturedProduct' or elem.tag =='manufacturedProduct':
-					yield elem
-			else:
-				if event == 'end' and elem.tag == tag:
-					yield elem
+			# if event == 'start':
+				# If we pass "yes" via medicineCheck, then we need to return <manufacturedMedicine> instead of <manufacturedProduct> 
+				if medicineCheck == 'yes':
+					if elem.tag == "{urn:hl7-org:v3}manufacturedMedicine":
+						yield elem
+					elif elem.tag == '{urn:hl7-org:v3}manufacturedProduct' or elem.tag =='manufacturedProduct':
+						yield elem
+				else:
+					if tag.find('{') >= 0:
+						tag = tag[16:]
+					if elem.tag == tag:
+						yield elem
 		root.clear() # preserve memory
 
 	# ------------------
@@ -52,30 +61,38 @@ def parseData(name):
 	setInfo = {}
 	setInfo['file_name'] = name
 	setInfo['date_created'] = time.strftime("%d/%m/%Y")
-	for parent in getelements(name, "{urn:hl7-org:v3}document", 'no'):
-		for child in parent.iterchildren('{urn:hl7-org:v3}id'):
+	
+	def getInfo():
+		# Get information at parent level
+		tree = etree.parse(name)
+		root = tree.getroot()
+		for child in root.xpath("./*[local-name() = 'id']"):
 			setInfo['id_root'] = child.get('root')
-		for child in parent.iterchildren('{urn:hl7-org:v3}setId'):
+		for child in root.xpath("./*[local-name() = 'setId']"):
 			setInfo['setid'] = child.get('root')
-		for child in parent.iterchildren('{urn:hl7-org:v3}effectiveTime'):
+		for child in root.xpath("./*[local-name() = 'effectiveTime']"):
 			setInfo['effective_time'] = child.get('value')
-		for child in parent.iterchildren('{urn:hl7-org:v3}code'):
+		for child in root.xpath("./*[local-name() = 'code']"):
 			setInfo['document_type'] = child.get('code')
+			try:
+				setInfo['source'] = sourcesCodes[child.get('code')]
+			except: 
+				setInfo['source'] = 'other'
 
 	# --------------------
 	# Build Sponsors Array
 	# --------------------
-	sponsors ={}
+	sponsors = {}
 	for parent in getelements(name, "{urn:hl7-org:v3}author", 'no'):
-		for child in parent.iter('{urn:hl7-org:v3}representedOrganization'):
-			for grandChild in child.iterchildren('{urn:hl7-org:v3}name'):
+		for child in parent.xpath(".//*[local-name() = 'representedOrganization']"):
+			for grandChild in child.xpath("./*[local-name() = 'name']"):
 				sponsors['name'] = grandChild.text.strip()
 				sponsors['author_type'] = 'labler'
 				grandChild.clear()
 
 	for parent in getelements(name, "{urn:hl7-org:v3}legalAuthenticator", 'no'):
-		for child in parent.iter('{urn:hl7-org:v3}representedOrganization'):
-			for grandChild in child.iterchildren('{urn:hl7-org:v3}name'):
+		for child in parent.xpath(".//*[local-name() = 'representedOrganization']"):
+			for grandChild in child.xpath("./*[local-name() = 'representedOrganization']"):
 				sponsors['name'] = grandChild.text.strip()
 				sponsors['author_type'] = 'legal'
 				grandChild.clear()
@@ -121,7 +138,6 @@ def parseData(name):
 	partNumbers = []
 
 	for parent in getelements(name, "{urn:hl7-org:v3}manufacturedProduct", 'yes'):
-
 		equalProdCodes = ''
 		# Get equal product code from <definingMaterialKind>
 		try:
@@ -137,16 +153,15 @@ def parseData(name):
 			# in empty objects being appended to ingredients array. So use ingredientTrue to test.
 			ingredientTrue = 0
 
-			for child in parent.iterchildren('{urn:hl7-org:v3}name'):
-				names.append(child.text.strip())
-
-			for formCode in parent.iterchildren('{urn:hl7-org:v3}formCode'):
+			
+			for formCode in parent.xpath("./*[local-name() = 'formCode']"):
 				# Only check <manufacturedProduct> level <formCode> against codeChecks if there are no parts
 				if partCode == 'zero':
 					if formCode.get('code') not in codeChecks:
 						pass
 					else: 
-						for productCode in parent.iterchildren('{urn:hl7-org:v3}code'):
+						getInfo()
+						for productCode in parent.xpath("./*[local-name() = 'code']"):
 							uniqueCode = productCode.get('code') + '-0'
 							formCodes.append(formCode.get('code'))
 							# set ingredients array for uniquecode
@@ -157,7 +172,7 @@ def parseData(name):
 								partNumbers.append('0')
 				else:
 					# This applies only to <parts>
-					for productCode in parent.iterchildren('{urn:hl7-org:v3}code'):
+					for productCode in parent.xpath("./*[local-name() = 'code']"):
 						uniqueCode = productCode.get('code') + '-'+str(index)
 						formCodes.append(formCode.get('code'))
 						# set ingredients array for uniquecode
@@ -167,11 +182,6 @@ def parseData(name):
 							productCodes.append(productCode.get('code'))
 							partNumbers.append(index)
 
-			# Send code, name and formCode to info = {}
-			info['product_code'] = productCodes
-			info['part_num'] = partNumbers
-			info['product_name'] = names
-			info['form_code'] = formCodes
 
 			# Get <containerPackagedProduct> information
 			packageProducts = []
@@ -206,20 +216,27 @@ def parseData(name):
 			if len(packageProducts) != 0:
 				info['NDC'].append(packageProducts)
 
-
 			# Arrays for ingredients
 			active = []
 			inactive = []
 			splStrength = []
 			# If partCode is zero, we can find the ingredients directly below the <manufacturedProduct> parent
 			# else we need to iterate thorugh the <partProduct> of the <part>, from proceed() function
+
 			if partCode == 'zero':
 				level = parent
+				for child in parent.xpath("./*[local-name() = 'name']"):
+					names.append(child.text.strip())
+
 			else:
 				partProduct = partChild.xpath("./*[local-name() = 'partProduct']")
-				level = partProduct[0]
+				if len(partProduct) == 0:
+					partProduct = partChild.xpath("./*[local-name() = 'partMedicine']")
 
-			for child in level.iterchildren('{urn:hl7-org:v3}ingredient'):
+				level = partProduct[0]
+				for child in partProduct[0].xpath("./*[local-name() = 'name']"):
+					names.append(child.text.strip())
+			for child in level.xpath("./*[local-name() = 'ingredient']"):
 				# Create temporary object for each ingredient
 				ingredientTemp = {}
 				ingredientTemp['ingredient_type'] = {}
@@ -230,21 +247,25 @@ def parseData(name):
 					ingredientTrue = 1
 					ingredientTemp['active_moiety_names'] = []
 
-					for grandChild in child.iterchildren('{urn:hl7-org:v3}ingredientSubstance'):
+					for grandChild in child.xpath("./*[local-name() = 'ingredientSubstance']"):
 						for c in grandChild.iterchildren():
 							ingredientTemp['ingredient_type'] = 'active'
-							if c.tag == '{urn:hl7-org:v3}name':
+							if c.tag == '{urn:hl7-org:v3}name' or c.tag == 'name':
 								active.append(c.text.strip())
 								splStrengthItem = c.text.strip()
 								ingredientTemp['substance_name'] = c.text.strip()
-							if c.tag == '{urn:hl7-org:v3}code':
+							if c.tag == '{urn:hl7-org:v3}code' or c.tag == 'code':
 								ingredientTemp['substance_code'] = c.get('code')
-							if c.tag =='{urn:hl7-org:v3}activeMoiety':
+							if c.tag =='{urn:hl7-org:v3}activeMoiety' or c.tag == 'activeMoiety':
 								name = c.xpath(".//*[local-name() = 'name']")
+
 								# Send active moiety to ingredientTemp
-								ingredientTemp['active_moiety_names'].append(name[0].text.strip())
-					
-					for grandChild in child.iterchildren('{urn:hl7-org:v3}quantity'):
+								try: 
+									ingredientTemp['active_moiety_names'].append(name[0].text.strip())
+								except:
+									ingredientTemp['active_moiety_names'].append('')
+
+					for grandChild in child.xpath("./*[local-name() = 'quantity']"):
 						numerator = grandChild.xpath("./*[local-name() = 'numerator']")
 						denominator = grandChild.xpath("./*[local-name() = 'denominator']")
 
@@ -262,13 +283,13 @@ def parseData(name):
 				if child.get('classCode') == 'IACT':
 					ingredientTrue = 1
 					# Create object for each inactive ingredient
-					for grandChild in child.iterchildren('{urn:hl7-org:v3}ingredientSubstance'):
+					for grandChild in child.xpath("./*[local-name() = 'ingredientSubstance']"):
 						for c in grandChild.iterchildren():
 							ingredientTemp['ingredient_type'] = 'inactive'
-							if c.tag == '{urn:hl7-org:v3}name':
+							if c.tag == '{urn:hl7-org:v3}name' or c.tag =='name':
 								inactive.append(c.text.strip())
 								ingredientTemp['substance_name'] = c.text.strip()
-							if c.tag == '{urn:hl7-org:v3}code':
+							if c.tag == '{urn:hl7-org:v3}code' or c.tag == 'code':
 								ingredientTemp['substance_code'] = c.get('code')
 				try: 
 					ingredients[uniqueCode].append(ingredientTemp)
@@ -276,6 +297,11 @@ def parseData(name):
 					# this is passed because of no uniqeCode assigned when not OSDF
 					pass
 
+			# Send code, name and formCode to info = {}
+			info['product_code'] = productCodes
+			info['part_num'] = partNumbers
+			info['medicine_name'] = names
+			info['form_code'] = formCodes
 			# If ingredientTrue was set to 1 above, we know we have ingredient information to append
 			if ingredientTrue != 0:
 				info['equal_product_code'].append(equalProdCodes)
@@ -292,6 +318,8 @@ def parseData(name):
 				else:
 					value = value[0].attrib
 				kind = grandChild.find("./{urn:hl7-org:v3}code[@code='"+ctype+"']")
+				if kind == None:
+					kind = grandChild.find("./code[@code='"+ctype+"']")
 				if kind !=None:
 					if ctype == 'SPLCOLOR':
 						if dup == '1':
@@ -323,27 +351,26 @@ def parseData(name):
 			else:
 				level = partChild
 			previous = []
-			for child in level.iterchildren('{urn:hl7-org:v3}subjectOf'):
-				 # Get approval code
+			for child in level.xpath("./*[local-name() = 'subjectOf']"):
 				try:
-					for grandChild in child.findall("{urn:hl7-org:v3}approval"):
+					for grandChild in child.xpath(".//*[local-name() = 'approval']"):
 						statusCode = grandChild.xpath("./*[local-name() = 'code']")
 						info['APPROVAL_CODE'].append(statusCode[0].get('code'))
 				except: 
 					info['APPROVAL_CODE'].append('')
 				#Get marketing act code
-				for grandChild in child.findall("{urn:hl7-org:v3}marketingAct"):
+				for grandChild in child.xpath("./*[local-name() = 'marketingAct']"):
 					statusCode = grandChild.xpath("./*[local-name() = 'statusCode']")
 
 					info['MARKETING_ACT_CODE'].append(statusCode[0].get('code'))
 				# Get policy code
-				for grandChild in child.findall("{urn:hl7-org:v3}policy"):
-					for each in grandChild.iterchildren('{urn:hl7-org:v3}code'):
+				for grandChild in child.xpath("./*[local-name() = 'policy']"):
+					for each in grandChild.xpath("./*[local-name() = 'code']"):
 						info['DEA_SCHEDULE_CODE'].append(each.get('code'))
 						info['DEA_SCHEDULE_NAME'].append(each.get('displayName'))
 
-				for grandChild in child.findall("{urn:hl7-org:v3}characteristic"):
-					for each in grandChild.iterchildren('{urn:hl7-org:v3}code'):
+				for grandChild in child.xpath("./*[local-name() = 'characteristic']"):
+					for each in grandChild.xpath("./*[local-name() = 'code']"):
 						# Run each type through the CheckForValues() function above
 						ctype = each.get('code')
 						# checks for duplicate spl types, splcolor can happen twice 
@@ -375,27 +402,27 @@ def parseData(name):
 					pass
 				# else send to proceed() function with index
 				else:
+					getInfo()
 					proceed(formCode[0].get('code'), child, index)
 					index = index + 1
 	
 	prodMedicines.append(info)
 
 	prodMedNames = [
-					'SPLCOLOR','SPLIMAGE','SPLIMPRINT','product_name','SPLSHAPE',
+					'SPLCOLOR','SPLIMAGE','SPLIMPRINT','medicine_name','SPLSHAPE',
 					'SPL_INGREDIENTS','SPL_INACTIVE_ING','SPLSCORE','SPLSIZE',
-					'product_code','part_num','form_code','MARKETING_ACT_CODE',
+					'product_code','part_num','dosage_code','MARKETING_ACT_CODE',
 					'DEA_SCHEDULE_CODE','DEA_SCHEDULE_NAME','NDC','equal_product_code',
 					'SPL_STRENGTH'
 					]
-	setInfoNames = ['file_name','effective_time','id_root','date_created','setid','document_type']
-	sponsorNames = ['name','author_type']
+	setInfoNames = ['file_name','effective_time','id_root','date_created','setid','document_type','source']
+	sponsorNames = ['author','author_type']
 
 	# Loop through prodMedicines as many times as there are unique product codes + part codes combinations, which is len(codes)
-
 	products = []
 	if codes: 
 		for i in range(0, len(codes)):
-			uniqueID = setInfo['id_root'] + '-' + codes[i]
+			uniqueID = setInfo['setid'] + '-' + codes[i]
 			product = {}
 			product['setid_product'] = uniqueID
 			product['ndc_codes'] = prodMedicines[0]['NDC'][i]
@@ -425,7 +452,12 @@ def parseData(name):
 	else:
 		sys.exit("Not OSDF")
 
-if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/2c442c46-c6c1-5b40-d962-b67249742c2d.xml")
-	#test = parseData("../tmp/tmp-unzipped/d41e5046-3144-4d91-82a3-22a9e7321abd.xml")
-	#print test
+# #Use this code to run xpath on the tmp-unzipped files without other scripts
+# if __name__ == "__main__":
+# 	os.chdir("../tmp/tmp-unzipped/")
+# 	for fn in os.listdir('.'):
+# 		if fn.endswith(".xml"):
+# 			xmlData = parseData(fn) 
+			#print xmlData
+	# test = parseData("../tmp/tmp-unzipped/0247493a-8221-44f5-afa6-071bde3bfac2.xml")
+# 	print test
