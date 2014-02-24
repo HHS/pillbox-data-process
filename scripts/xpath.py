@@ -403,14 +403,14 @@ def parseData(name):
 	prodMedicines.append(info)
 
 	prodMedNames = [
-					'SPLCOLOR','SPLIMAGE','SPLIMPRINT','product_name','SPLSHAPE',
+					'SPLCOLOR','SPLIMAGE','SPLIMPRINT','medicine_name','SPLSHAPE',
 					'SPL_INGREDIENTS','SPL_INACTIVE_ING','SPLSCORE','SPLSIZE',
-					'product_code','part_num','form_code','MARKETING_ACT_CODE',
+					'product_code','part_num','dosage_code','MARKETING_ACT_CODE',
 					'DEA_SCHEDULE_CODE','DEA_SCHEDULE_NAME','NDC','equal_product_code',
 					'SPL_STRENGTH'
 					]
 	setInfoNames = ['file_name','effective_time','id_root','date_created','setid','document_type','source']
-	sponsorNames = ['name','author_type']
+	sponsorNames = ['author','author_type']
 
 	# Loop through prodMedicines as many times as there are unique product codes + part codes combinations, which is len(codes)
 	products = []
