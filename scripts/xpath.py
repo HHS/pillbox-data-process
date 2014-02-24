@@ -153,9 +153,7 @@ def parseData(name):
 			# in empty objects being appended to ingredients array. So use ingredientTrue to test.
 			ingredientTrue = 0
 
-			for child in parent.xpath("./*[local-name() = 'name']"):
-				names.append(child.text.strip())
-
+			
 			for formCode in parent.xpath("./*[local-name() = 'formCode']"):
 				# Only check <manufacturedProduct> level <formCode> against codeChecks if there are no parts
 				if partCode == 'zero':
@@ -184,11 +182,6 @@ def parseData(name):
 							productCodes.append(productCode.get('code'))
 							partNumbers.append(index)
 
-			# Send code, name and formCode to info = {}
-			info['product_code'] = productCodes
-			info['part_num'] = partNumbers
-			info['product_name'] = names
-			info['form_code'] = formCodes
 
 			# Get <containerPackagedProduct> information
 			packageProducts = []
@@ -232,9 +225,14 @@ def parseData(name):
 
 			if partCode == 'zero':
 				level = parent
+				for child in parent.xpath("./*[local-name() = 'name']"):
+					names.append(child.text.strip())
+
 			else:
 				partProduct = partChild.xpath("./*[local-name() = 'partProduct']")
 				level = partProduct[0]
+				for child in partProduct[0].xpath("./*[local-name() = 'name']"):
+					names.append(child.text.strip())
 			for child in level.xpath("./*[local-name() = 'ingredient']"):
 				# Create temporary object for each ingredient
 				ingredientTemp = {}
@@ -264,7 +262,7 @@ def parseData(name):
 								except:
 									ingredientTemp['active_moiety_names'].append('')
 
-					for grandChild in child.iterchildren('{urn:hl7-org:v3}quantity'):
+					for grandChild in child.xpath("./*[local-name() = 'quantity']"):
 						numerator = grandChild.xpath("./*[local-name() = 'numerator']")
 						denominator = grandChild.xpath("./*[local-name() = 'denominator']")
 
@@ -296,6 +294,11 @@ def parseData(name):
 					# this is passed because of no uniqeCode assigned when not OSDF
 					pass
 
+			# Send code, name and formCode to info = {}
+			info['product_code'] = productCodes
+			info['part_num'] = partNumbers
+			info['medicine_name'] = names
+			info['form_code'] = formCodes
 			# If ingredientTrue was set to 1 above, we know we have ingredient information to append
 			if ingredientTrue != 0:
 				info['equal_product_code'].append(equalProdCodes)
@@ -446,12 +449,12 @@ def parseData(name):
 	else:
 		sys.exit("Not OSDF")
 
-# Use this code to run xpath on the tmp-unzipped files without other scripts
+# #Use this code to run xpath on the tmp-unzipped files without other scripts
 # if __name__ == "__main__":
 # 	os.chdir("../tmp/tmp-unzipped/")
 # 	for fn in os.listdir('.'):
 # 		if fn.endswith(".xml"):
 # 			xmlData = parseData(fn) 
-# 			#print xmlData
-# 	test = parseData("../tmp/tmp-unzipped/00736fdd-192f-4ef9-9abe-c5c0d2f8cef2.xml")
+			#print xmlData
+	# test = parseData("../tmp/tmp-unzipped/0247493a-8221-44f5-afa6-071bde3bfac2.xml")
 # 	print test
