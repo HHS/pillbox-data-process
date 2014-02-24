@@ -84,15 +84,15 @@ def parseData(name):
 	# --------------------
 	sponsors = {}
 	for parent in getelements(name, "{urn:hl7-org:v3}author", 'no'):
-		for child in parent.iter('{urn:hl7-org:v3}representedOrganization'):
-			for grandChild in child.iterchildren('{urn:hl7-org:v3}name'):
+		for child in parent.xpath(".//*[local-name() = 'representedOrganization']"):
+			for grandChild in child.xpath("./*[local-name() = 'name']"):
 				sponsors['name'] = grandChild.text.strip()
 				sponsors['author_type'] = 'labler'
 				grandChild.clear()
 
 	for parent in getelements(name, "{urn:hl7-org:v3}legalAuthenticator", 'no'):
-		for child in parent.iter('{urn:hl7-org:v3}representedOrganization'):
-			for grandChild in child.iterchildren('{urn:hl7-org:v3}name'):
+		for child in parent.xpath(".//*[local-name() = 'representedOrganization']"):
+			for grandChild in child.xpath("./*[local-name() = 'representedOrganization']"):
 				sponsors['name'] = grandChild.text.strip()
 				sponsors['author_type'] = 'legal'
 				grandChild.clear()
