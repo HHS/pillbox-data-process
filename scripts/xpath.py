@@ -230,6 +230,9 @@ def parseData(name):
 
 			else:
 				partProduct = partChild.xpath("./*[local-name() = 'partProduct']")
+				if len(partProduct) == 0:
+					partProduct = partChild.xpath("./*[local-name() = 'partMedicine']")
+
 				level = partProduct[0]
 				for child in partProduct[0].xpath("./*[local-name() = 'name']"):
 					names.append(child.text.strip())
@@ -419,7 +422,7 @@ def parseData(name):
 	products = []
 	if codes: 
 		for i in range(0, len(codes)):
-			uniqueID = setInfo['id_root'] + '-' + codes[i]
+			uniqueID = setInfo['setid'] + '-' + codes[i]
 			product = {}
 			product['setid_product'] = uniqueID
 			product['ndc_codes'] = prodMedicines[0]['NDC'][i]
