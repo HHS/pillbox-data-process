@@ -60,7 +60,7 @@ def parseData(name):
 	# ------------------
 	setInfo = {}
 	setInfo['file_name'] = name
-	setInfo['date_created'] = time.strftime("%d/%m/%Y")
+	setInfo['date_created'] = time.strftime("f%d/%m/%Y")
 	
 	def getInfo():
 		# Get information at parent level
@@ -174,7 +174,7 @@ def parseData(name):
 					# This applies only to <parts>
 					for productCode in parent.xpath("./*[local-name() = 'code']"):
 						uniqueCode = productCode.get('code') + '-'+str(index)
-						formCodes.append(formCode.get('code'))
+						formCodes.append(partCode)
 						# set ingredients array for uniquecode
 						ingredients[uniqueCode] = []
 						if uniqueCode not in codes:
