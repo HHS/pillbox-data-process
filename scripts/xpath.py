@@ -65,7 +65,7 @@ def parseData(name):
 	# ------------------
 	setInfo = {}
 	setInfo['file_name'] = name
-	setInfo['date_created'] = time.strftime("%d/%m/%Y")
+	setInfo['date_created'] = time.strftime("f%d/%m/%Y")
 	
 	def getInfo():
 		# Get information at parent level
@@ -474,16 +474,14 @@ def parseData(name):
 		print products
 		return products
 	else:
-		print 'not maatching'
-		# sys.exit("Not OSDF")
+		sys.exit("Not OSDF")
 
-# Use this code to run xpath on the tmp-unzipped files without other scripts
-if __name__ == "__main__":
-	os.chdir("../tmp/tmp-unzipped/")
-	for fn in os.listdir('.'):
-		print fn, 'name'
-		if fn.endswith(".xml"):
-			xmlData = parseData(fn) 
-			# print xmlData
-	# test = parseData("../tmp/tmp-unzipped/0064052e-9dce-418b-8cd2-f140225910f3.xml")
+# #Use this code to run xpath on the tmp-unzipped files without other scripts
+# if __name__ == "__main__":
+# 	os.chdir("../tmp/tmp-unzipped/")
+# 	for fn in os.listdir('.'):
+# 		if fn.endswith(".xml"):
+# 			xmlData = parseData(fn) 
+			#print xmlData
+	# test = parseData("../tmp/tmp-unzipped/0247493a-8221-44f5-afa6-071bde3bfac2.xml")
 # 	print test
