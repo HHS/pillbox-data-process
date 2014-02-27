@@ -45,12 +45,17 @@ def parseData(name):
 				# If we pass "yes" via medicineCheck, then we need to return <manufacturedMedicine> instead of <manufacturedProduct> 
 				if medicineCheck == 'yes':
 					if elem.tag == "{urn:hl7-org:v3}manufacturedMedicine":
+						
 						yield elem
 					elif elem.tag == '{urn:hl7-org:v3}manufacturedProduct' or elem.tag =='manufacturedProduct':
+						
 						yield elem
 				else:
 					if tag.find('{') >= 0:
 						tag = tag[16:]
+					if elem.tag.find('{') >= 0:
+						elem.tag = elem.tag[16:]
+
 					if elem.tag == tag:
 						yield elem
 		root.clear() # preserve memory
@@ -137,51 +142,46 @@ def parseData(name):
 	productCodes = []
 	partNumbers = []
 
+
 	for parent in getelements(name, "{urn:hl7-org:v3}manufacturedProduct", 'yes'):
-		equalProdCodes = ''
-		# Get equal product code from <definingMaterialKind>
-		try:
-			equalProdParent = parent.xpath(".//*[local-name() = 'definingMaterialKind']")
-			for child in equalProdParent[0].iterchildren():
-				if child.get('code') not in equalProdCodes:
-					equalProdCodes = child.get('code')
-		except:
-			equalProdCodes = ''
 
 		def proceed(partCode, partChild, index):
+			equalProdCodes = ''
 			# There are <manufacturedProduct> elements that have no content and would result
 			# in empty objects being appended to ingredients array. So use ingredientTrue to test.
 			ingredientTrue = 0
 
-			
-			for formCode in parent.xpath("./*[local-name() = 'formCode']"):
-				# Only check <manufacturedProduct> level <formCode> against codeChecks if there are no parts
-				if partCode == 'zero':
-					if formCode.get('code') not in codeChecks:
-						pass
-					else: 
-						getInfo()
-						for productCode in parent.xpath("./*[local-name() = 'code']"):
-							uniqueCode = productCode.get('code') + '-0'
-							formCodes.append(formCode.get('code'))
-							# set ingredients array for uniquecode
-							ingredients[uniqueCode] = []
-							if uniqueCode not in codes:
-								codes.append(uniqueCode)
-								productCodes.append(productCode.get('code'))
-								partNumbers.append('0')
-				else:
-					# This applies only to <parts>
-					for productCode in parent.xpath("./*[local-name() = 'code']"):
-						uniqueCode = productCode.get('code') + '-'+str(index)
-						formCodes.append(formCode.get('code'))
-						# set ingredients array for uniquecode
-						ingredients[uniqueCode] = []
-						if uniqueCode not in codes:
-							codes.append(uniqueCode)
-							productCodes.append(productCode.get('code'))
-							partNumbers.append(index)
+			# Get equal product code from <definingMaterialKind>
+			try:
+				equalProdParent = parent.xpath(".//*[local-name() = 'definingMaterialKind']")
+				
+				code = equalProdParent[0].xpath("./*[local-name() = 'code']")
+				if code[0].get('code') not in equalProdCodes:
+					equalProdCodes = code[0].get('code')
+			except:
+				equalProdCodes = ''
 
+			if partCode == 'zero':
+				getInfo()
+				for productCode in parent.xpath("./*[local-name() = 'code']"):
+					uniqueCode = productCode.get('code') + '-0'
+					# set ingredients array for uniquecode
+					ingredients[uniqueCode] = []
+					if uniqueCode not in codes:
+						codes.append(uniqueCode)
+						productCodes.append(productCode.get('code'))
+						partNumbers.append('0')
+			else:
+				# This applies only to <parts>
+				for productCode in parent.xpath("./*[local-name() = 'code']"):
+					uniqueCode = productCode.get('code') + '-'+str(index)
+					formCodes.append(partCode)
+					# set ingredients array for uniquecode
+					ingredients[uniqueCode] = []
+					if uniqueCode not in codes:
+						codes.append(uniqueCode)
+						productCodes.append(productCode.get('code'))
+						partNumbers.append(index)
 
 			# Get <containerPackagedProduct> information
 			packageProducts = []
@@ -189,18 +189,19 @@ def parseData(name):
 				# Check if we're working with <containerPackagedProduct> or <containerPackagedMedicine>
 				checkMedicine =  child.xpath("./*[local-name() = 'containerPackagedMedicine']")
 				checkProduct =  child.xpath("./*[local-name() = 'containerPackagedProduct']")
-				if len(checkProduct) != 0:
+				if checkProduct:
 					productType = 'containerPackagedProduct'
 				else:
 					productType = 'containerPackagedMedicine'
 				# Send product
 				for grandChild in child.xpath("./*[local-name() = '"+productType+"']"):
 					value = grandChild.xpath("./*[local-name() = 'code']")
+					form = grandChild.xpath("./*[local-name() = 'formCode']")
 					# For when there is another <containerPackagedProduct> nested under another <asContent>
 					if value[0].get('code') == None:
 						subElement = grandChild.xpath(".//*[local-name() = 'asContent']")
 						# subValues is an array of all <code> tags under the second instance of <asContent>
-						if len(subElement) != 0:
+						if subElement:
 							subValues = subElement[0].xpath(".//*[local-name() = 'code']")
 							tempCodes = []
 							# Loop through returned values, which come from multiple levels of <containerPackagedProducts>
@@ -210,12 +211,12 @@ def parseData(name):
 					# Else just print the value from the first <containerPackagedProduct> level
 					else:
 						packageProducts.append(value[0].get('code'))
-
+	
 			# The getElements() function captures <manufacturedProduct> and </manufacturedProduct>, which is what
 			# we're seeing when pacakageProducts has length zero
-			if len(packageProducts) != 0:
+			if packageProducts:
 				info['NDC'].append(packageProducts)
-
+	
 			# Arrays for ingredients
 			active = []
 			inactive = []
@@ -230,7 +231,7 @@ def parseData(name):
 
 			else:
 				partProduct = partChild.xpath("./*[local-name() = 'partProduct']")
-				if len(partProduct) == 0:
+				if not partProduct:
 					partProduct = partChild.xpath("./*[local-name() = 'partMedicine']")
 
 				level = partProduct[0]
@@ -258,13 +259,13 @@ def parseData(name):
 								ingredientTemp['substance_code'] = c.get('code')
 							if c.tag =='{urn:hl7-org:v3}activeMoiety' or c.tag == 'activeMoiety':
 								name = c.xpath(".//*[local-name() = 'name']")
-
+	
 								# Send active moiety to ingredientTemp
 								try: 
 									ingredientTemp['active_moiety_names'].append(name[0].text.strip())
 								except:
 									ingredientTemp['active_moiety_names'].append('')
-
+	
 					for grandChild in child.xpath("./*[local-name() = 'quantity']"):
 						numerator = grandChild.xpath("./*[local-name() = 'numerator']")
 						denominator = grandChild.xpath("./*[local-name() = 'denominator']")
@@ -295,13 +296,13 @@ def parseData(name):
 					ingredients[uniqueCode].append(ingredientTemp)
 				except:
 					# this is passed because of no uniqeCode assigned when not OSDF
-					pass
+					continue
 
 			# Send code, name and formCode to info = {}
 			info['product_code'] = productCodes
 			info['part_num'] = partNumbers
 			info['medicine_name'] = names
-			info['form_code'] = formCodes
+			info['dosage_code'] = formCodes
 			# If ingredientTrue was set to 1 above, we know we have ingredient information to append
 			if ingredientTrue != 0:
 				info['equal_product_code'].append(equalProdCodes)
@@ -346,6 +347,9 @@ def parseData(name):
 
 			# If partCode is zero, we can find the <asContent> directly below the <manufacturedProduct> parent
 			# else we need to iterate thorugh the <partProduct> of the <part>, from proceed() function
+			
+
+			
 			if partCode == 'zero':
 				level = parent
 			else:
@@ -361,7 +365,7 @@ def parseData(name):
 				#Get marketing act code
 				for grandChild in child.xpath("./*[local-name() = 'marketingAct']"):
 					statusCode = grandChild.xpath("./*[local-name() = 'statusCode']")
-
+			
 					info['MARKETING_ACT_CODE'].append(statusCode[0].get('code'))
 				# Get policy code
 				for grandChild in child.xpath("./*[local-name() = 'policy']"):
@@ -388,7 +392,24 @@ def parseData(name):
 
 		# Check if there are <parts> in the manufactured product, if not, partCode = 0
 		parts = parent.xpath("./*[local-name() = 'part']")
-		if len(parts) == 0:
+		if not parts:
+			# Check for child <manufacturedProduct>, if exists, check formCode
+			childProduct = parent.xpath(".//*[local-name() = 'manufacturedProduct']")
+			if childProduct:
+				childFormCode = childProduct[0].xpath("./*[local-name() = 'formCode']")
+				if childFormCode:
+					if childFormCode[0].get('code') not in codeChecks:
+						print 'not in code checks child'
+						continue  #skip to next Manufactured Product 
+			# test current level FormCode against codeChecks
+			formCode = parent.xpath("./*[local-name() = 'formCode']")
+			if formCode:
+				print formCode[0].get('code'), 'formcode'
+				if formCode[0].get('code') not in codeChecks:
+					print 'not in code checks current'
+					continue
+				else:
+					formCodes.append(formCode[0].get('code'))
 			# No parts found, so part number is zero, send to proceed() function
 			proceed('zero','','')
 		else:
@@ -396,18 +417,19 @@ def parseData(name):
 			index = 1
 			for child in parts:
 				formCode =  child.xpath(".//*[local-name() = 'formCode']")
+
 				# Check if formCode is in codeChecks
 				if formCode[0].get('code') not in codeChecks:
 					# If <part> <formCode> is not in codeChecks, move onto next <part>
-					pass
+					continue
 				# else send to proceed() function with index
 				else:
 					getInfo()
 					proceed(formCode[0].get('code'), child, index)
 					index = index + 1
-	
 	prodMedicines.append(info)
-
+	# print prodMedicines, 'prod'
+	print
 	prodMedNames = [
 					'SPLCOLOR','SPLIMAGE','SPLIMPRINT','medicine_name','SPLSHAPE',
 					'SPL_INGREDIENTS','SPL_INACTIVE_ING','SPLSCORE','SPLSIZE',
@@ -420,7 +442,8 @@ def parseData(name):
 
 	# Loop through prodMedicines as many times as there are unique product codes + part codes combinations, which is len(codes)
 	products = []
-	if codes: 
+	# print prodMedicines[0]['NDC']
+	if prodMedicines[0]['NDC']:
 		for i in range(0, len(codes)):
 			uniqueID = setInfo['setid'] + '-' + codes[i]
 			product = {}
@@ -448,16 +471,19 @@ def parseData(name):
 			# Ingredients are showing duplicates again leaving out while fixing.  
 			product['ingredients'] = ingredients[codes[i]]
 			products.append(product)
+		print products
 		return products
 	else:
-		sys.exit("Not OSDF")
+		print 'not maatching'
+		# sys.exit("Not OSDF")
 
-# #Use this code to run xpath on the tmp-unzipped files without other scripts
-# if __name__ == "__main__":
-# 	os.chdir("../tmp/tmp-unzipped/")
-# 	for fn in os.listdir('.'):
-# 		if fn.endswith(".xml"):
-# 			xmlData = parseData(fn) 
-			#print xmlData
-	# test = parseData("../tmp/tmp-unzipped/0247493a-8221-44f5-afa6-071bde3bfac2.xml")
+# Use this code to run xpath on the tmp-unzipped files without other scripts
+if __name__ == "__main__":
+	os.chdir("../tmp/tmp-unzipped/")
+	for fn in os.listdir('.'):
+		print fn, 'name'
+		if fn.endswith(".xml"):
+			xmlData = parseData(fn) 
+			# print xmlData
+	# test = parseData("../tmp/tmp-unzipped/0064052e-9dce-418b-8cd2-f140225910f3.xml")
 # 	print test
