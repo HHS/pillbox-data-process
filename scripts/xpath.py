@@ -399,15 +399,10 @@ def parseData(name):
 				childFormCode = childProduct[0].xpath("./*[local-name() = 'formCode']")
 				if childFormCode:
 					if childFormCode[0].get('code') not in codeChecks:
-						print 'not in code checks child'
-						continue  #skip to next Manufactured Product 
 			# test current level FormCode against codeChecks
 			formCode = parent.xpath("./*[local-name() = 'formCode']")
 			if formCode:
-				print formCode[0].get('code'), 'formcode'
 				if formCode[0].get('code') not in codeChecks:
-					print 'not in code checks current'
-					continue
 				else:
 					formCodes.append(formCode[0].get('code'))
 			# No parts found, so part number is zero, send to proceed() function
@@ -428,8 +423,7 @@ def parseData(name):
 					proceed(formCode[0].get('code'), child, index)
 					index = index + 1
 	prodMedicines.append(info)
-	# print prodMedicines, 'prod'
-	print
+
 	prodMedNames = [
 					'SPLCOLOR','SPLIMAGE','SPLIMPRINT','medicine_name','SPLSHAPE',
 					'SPL_INGREDIENTS','SPL_INACTIVE_ING','SPLSCORE','SPLSIZE',
@@ -442,7 +436,7 @@ def parseData(name):
 
 	# Loop through prodMedicines as many times as there are unique product codes + part codes combinations, which is len(codes)
 	products = []
-	# print prodMedicines[0]['NDC']
+
 	if prodMedicines[0]['NDC']:
 		for i in range(0, len(codes)):
 			uniqueID = setInfo['setid'] + '-' + codes[i]
@@ -471,8 +465,7 @@ def parseData(name):
 			# Ingredients are showing duplicates again leaving out while fixing.  
 			product['ingredients'] = ingredients[codes[i]]
 			products.append(product)
-		print products
-		return products
+
 	else:
 		sys.exit("Not OSDF")
 
