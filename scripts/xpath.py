@@ -12,13 +12,6 @@ import atexit
 from lxml import etree
 from itertools import groupby
 
-sourcesCodes = {
-	'34391-3': 'HRX',
-	'34390-5':'HOTC',
-	'50578-4':'ANIMALHRX',
-	'50577-6':'ANIMALOTC'
-	}
-
 # Check all XMLs against form codes, discard all XMLs that don't match
 codeChecks = [
 	"C25158", "C42895", "C42896",
@@ -59,7 +52,9 @@ def parseData(name):
 	# Build SetInfo array
 	# ------------------
 	setInfo = {}
-	setInfo['file_name'] = name
+	filename = name.split('/')
+	setInfo['file_name'] = filename[1]
+	setInfo['source'] = filename[0]
 	setInfo['date_created'] = time.strftime("%d/%m/%Y")
 	
 	def getInfo():
@@ -74,10 +69,6 @@ def parseData(name):
 			setInfo['effective_time'] = child.get('value')
 		for child in root.xpath("./*[local-name() = 'code']"):
 			setInfo['document_type'] = child.get('code')
-			try:
-				setInfo['source'] = sourcesCodes[child.get('code')]
-			except: 
-				setInfo['source'] = 'other'
 
 	# --------------------
 	# Build Sponsors Array

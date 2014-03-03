@@ -6,6 +6,7 @@ import sys
 import time
 import traceback
 import csv
+import glob
 import simplejson as json
 from datetime import datetime
 # Import other files
@@ -81,8 +82,9 @@ def main():
 		t.start()
 
 	#populate queue with data
-	for fn in os.listdir('.'):
-		if fn.endswith(".xml"):
+	for d in os.listdir('.'):
+		files = glob.glob('%s/*.xml' % d)
+		for fn in files:
 			queue.put(fn)
 	#wait on the queue until everything has been processed     
 	queue.join()	
