@@ -80,14 +80,14 @@ def parseData(name):
 	for parent in getelements(name, "{urn:hl7-org:v3}author", 'no'):
 		for child in parent.xpath(".//*[local-name() = 'representedOrganization']"):
 			for grandChild in child.xpath("./*[local-name() = 'name']"):
-				sponsors['name'] = grandChild.text.strip()
+				sponsors['author'] = grandChild.text.strip()
 				sponsors['author_type'] = 'labler'
 				grandChild.clear()
 
 	for parent in getelements(name, "{urn:hl7-org:v3}legalAuthenticator", 'no'):
 		for child in parent.xpath(".//*[local-name() = 'representedOrganization']"):
 			for grandChild in child.xpath("./*[local-name() = 'representedOrganization']"):
-				sponsors['name'] = grandChild.text.strip()
+				sponsors['author'] = grandChild.text.strip()
 				sponsors['author_type'] = 'legal'
 				grandChild.clear()
 
@@ -387,10 +387,12 @@ def parseData(name):
 				childFormCode = childProduct[0].xpath("./*[local-name() = 'formCode']")
 				if childFormCode:
 					if childFormCode[0].get('code') not in codeChecks:
+						continue  #skip to next Manufactured Product
 			# test current level FormCode against codeChecks
 			formCode = parent.xpath("./*[local-name() = 'formCode']")
 			if formCode:
 				if formCode[0].get('code') not in codeChecks:
+					continue
 				else:
 					formCodes.append(formCode[0].get('code'))
 			# No parts found, so part number is zero, send to proceed() function
@@ -457,12 +459,7 @@ def parseData(name):
 	else:
 		sys.exit("Not OSDF")
 
-# #Use this code to run xpath on the tmp-unzipped files without other scripts
-# if __name__ == "__main__":
-# 	os.chdir("../tmp/tmp-unzipped/")
-# 	for fn in os.listdir('.'):
-# 		if fn.endswith(".xml"):
-# 			xmlData = parseData(fn) 
-			#print xmlData
-	# test = parseData("../tmp/tmp-unzipped/0247493a-8221-44f5-afa6-071bde3bfac2.xml")
-# 	print test
+#Use this code to run xpath on the tmp-unzipped files without other scripts
+if __name__ == "__main__":
+	test = parseData("../tmp/tmp-unzipped/0247493a-8221-44f5-afa6-071bde3bfac2.xml")
+	print test

@@ -6,7 +6,6 @@ from itertools import chain
 
 dataHeader = [
 		"setid",
-		"id_root",
 		"file_name",
 		"medicine_name",
 		"product_code",
