@@ -399,6 +399,7 @@ def parseData(name):
 				childFormCode = childProduct[0].xpath("./*[local-name() = 'formCode']")
 				if childFormCode:
 					if childFormCode[0].get('code') not in codeChecks:
+						continue  #skip to next Manufactured Product
 			# test current level FormCode against codeChecks
 			formCode = parent.xpath("./*[local-name() = 'formCode']")
 			if formCode:
