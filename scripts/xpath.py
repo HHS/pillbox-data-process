@@ -403,6 +403,7 @@ def parseData(name):
 			formCode = parent.xpath("./*[local-name() = 'formCode']")
 			if formCode:
 				if formCode[0].get('code') not in codeChecks:
+					continue
 				else:
 					formCodes.append(formCode[0].get('code'))
 			# No parts found, so part number is zero, send to proceed() function
@@ -465,7 +466,7 @@ def parseData(name):
 			# Ingredients are showing duplicates again leaving out while fixing.  
 			product['ingredients'] = ingredients[codes[i]]
 			products.append(product)
-
+		return products
 	else:
 		sys.exit("Not OSDF")
 
