@@ -3,21 +3,26 @@ import sys
 import csv
 import simplejson as json
 from itertools import chain
+import datetime
+
+now = datetime.datetime.now()
+today = now.strftime("%Y-%m-%d %H:%M")
 
 dataHeader = [
 		"setid",
 		"file_name",
 		"medicine_name",
+		"part_medicine_name",
 		"product_code",
 		"part_num",
 		"ndc9",
 		"author",
 		"author_type",
-		"date_created",
+		"dailymed_date",
 		"effective_time",
 		"DEA_SCHEDULE_CODE",
 		"DEA_SCHEDULE_NAME",
-		"MARKETING_ACT_CODE", 
+		"MARKETING_ACT_CODE",
 		"NDC",
 		"SPLCOLOR",
 		"SPLIMAGE",
@@ -50,10 +55,10 @@ ingredientsHeader = [
 
 dataOutput = open('../tmp/processed/csv/spl_data.csv', 'wb')
 ingredientsOutput = open('../tmp/processed/csv/spl_ingredients.csv', 'wb')
-dataWriter = csv.writer(dataOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_ALL, lineterminator='\n')
+dataWriter = csv.writer(dataOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_NONNUMERIC, lineterminator='\n')
 dataWriter.writerow(dataHeader)
 
-ingredientsWriter = csv.writer(ingredientsOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_ALL, lineterminator='\n')
+ingredientsWriter = csv.writer(ingredientsOutput, delimiter=",", quotechar='"', quoting=csv.QUOTE_NONNUMERIC, lineterminator='\n')
 ingredientsWriter.writerow(ingredientsHeader)
 
 def makeCSV(xmlData):
@@ -62,23 +67,35 @@ def makeCSV(xmlData):
 		dataRow = []
 		for h in dataHeader:
 			if h == 'SPL_INACTIVE_ING':
-				dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
+				if x['data'][h] == None:
+					dataRow.append(x['data'][h])
+				else:
+					dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
 			elif h == 'NDC':
 				dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
 			elif h == 'SPL_INGREDIENTS':
-				dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
+				if x['data'][h] == None:
+					dataRow.append(x['data'][h])
+				else:
+					dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
 			elif h == 'SPL_STRENGTH':
-				dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
+				if x['data'][h] == None:
+					dataRow.append(x['data'][h])
+				else:
+					dataRow.append(";".join(x['data'][h]).encode('ascii','ignore'))
 			elif h == 'part_num':
 				dataRow.append(x['data'][h])
 			elif h == 'product_name':
 				dataRow.append(x['data'][h].encode('ascii','ignore'))
 			else:
-				dataRow.append(x['data'][h].encode('ascii','ignore'))
+				if x['data'][h] == None:
+					dataRow.append(x['data'][h])
+				else:
+					dataRow.append(x['data'][h].encode('ascii','ignore'))
 		dataWriter.writerow(dataRow)
 		if x['ingredients']:
 			for a in x['ingredients']:
-				try: 
+				try:
 					if a['active_moiety_names']:
 						ingredientsRow = []
 						for i in ingredientsHeader:
@@ -93,20 +110,163 @@ def makeCSV(xmlData):
 							elif i == 'part_num':
 								ingredientsRow.append(part_num)
 							elif i == 'base_of_strength':
-								try: 
+								try:
 									ingredientsRow.append(";".join(a['active_moiety_names']).encode('ascii','ignore'))
 								except:
-									ingredientsRow.append("")
+									ingredientsRow.append(None)
 							else:
 								try:
 									ingredientsRow.append(a[i].encode('ascii','ignore'))
 								except:
-									ingredientsRow.append("")
+									ingredientsRow.append(None)
 						ingredientsWriter.writerow(ingredientsRow)
 				except:
 					pass
 
-
 def closeCSV():
 	dataOutput.close()
 	ingredientsOutput.close()
+
+def makeDataPackage():
+	datapackage = {
+				  "name": "pillbox",
+				  "title": "Pillbox SPL Data",
+				  "date_updated": today,
+				  "resources": [
+				    {
+				      "path": "spl_data.csv",
+				      "schema": {
+				        "fields": [
+				          {
+				            "name": "setid",
+				            "type": "string"
+				          },
+				          {
+				            "name": "file_name",
+				            "type": "string"
+				          },
+				          {
+				            "name": "medicine_name",
+				            "type": "string"
+				          },
+				          {
+				            "name": "product_code",
+				            "type": "string"
+				          },
+				          {
+				            "name": "part_num",
+				            "type": "integer"
+				          },
+				          {
+				            "name": "ndc9",
+				            "type": "string"
+				          },
+				          {
+				            "name": "author",
+				            "type": "string"
+				          },
+				          {
+				            "name": "author_type",
+				            "type": "string"
+				          },
+				          {
+				            "name": "date_created",
+				            "type": "string"
+				          },
+				          {
+				            "name": "effective_time",
+				            "type": "integer"
+				          },
+				          {
+				            "name": "DEA_SCHEDULE_CODE",
+				            "type": "string"
+				          },
+				          {
+				            "name": "DEA_SCHEDULE_NAME",
+				            "type": "string"
+				          },
+				          {
+				            "name": "MARKETING_ACT_CODE",
+				            "type": "string"
+				          },
+				          {
+				            "name": "NDC",
+				            "type": "string"
+				          },
+				          {
+				            "name": "SPLCOLOR",
+				            "type": "string"
+				          },
+				          {
+				            "name": "SPLIMAGE",
+				            "type": "string"
+				          },
+				          {
+				            "name": "SPLIMPRINT",
+				            "type": "string"
+				          },
+				          {
+				            "name": "SPLCOLOR",
+				            "type": "string"
+				          },
+				          {
+				            "name": "SPLSCORE",
+				            "type": "integer"
+				          },
+				          {
+				            "name": "SPLSHAPE",
+				            "type": "string"
+				          },
+				          {
+				            "name": "SPLSIZE",
+				            "type": "integer"
+				          },
+				          {
+				            "name": "SPL_INACTIVE_ING",
+				            "type": "string"
+				          },
+				          {
+				            "name": "SPL_INGREDIENTS",
+				            "type": "string"
+				          },
+				          {
+				            "name": "SPL_STRENGTH",
+				            "type": "string"
+				          },
+				          {
+				            "name": "SPLSHAPE",
+				            "type": "string"
+				          },
+				          {
+				            "name": "document_type",
+				            "type": "string"
+				          },
+				          {
+				            "name": "dosage_code",
+				            "type": "string"
+				          },
+				          {
+				            "name": "rxcui",
+				            "type": "string"
+				          },
+				          {
+				            "name": "rxstring",
+				            "type": "string"
+				          },
+				          {
+				            "name": "rxtty",
+				            "type": "string"
+				          },
+				          {
+				            "name": "source",
+				            "type": "string"
+				          },
+				          {
+				            "name": "equal_product_code",
+				            "type": "string"
+				          }
+				        ]
+				      }
+				    }
+				  ]
+				}

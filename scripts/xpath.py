@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # ------------------
 # Pillbox Xpath script that extracts raw data from XML to yield:
-#    1. Rows array, with one row object per product code. 
+#    1. Rows array, with one row object per product code.
 #    2. Ingredients array, with one object per ingredient
 # ------------------
-# Requirements: Python 2.6 or greater 
+# Requirements: Python 2.6 or greater
 
 import os, sys, time
 import StringIO
@@ -35,7 +35,7 @@ def parseData(name):
 		_, root = next(context) # get root element
 		for event, elem in context:
 			# if event == 'start':
-				# If we pass "yes" via medicineCheck, then we need to return <manufacturedMedicine> instead of <manufacturedProduct> 
+				# If we pass "yes" via medicineCheck, then we need to return <manufacturedMedicine> instead of <manufacturedProduct>
 				if medicineCheck == 'yes':
 					if elem.tag == "{urn:hl7-org:v3}manufacturedMedicine":
 						yield elem
@@ -58,8 +58,8 @@ def parseData(name):
 	filename = name.split('/')
 	setInfo['file_name'] = filename[1]
 	setInfo['source'] = filename[0]
-	setInfo['date_created'] = time.strftime("%d/%m/%Y")
-	
+	setInfo['dailymed_date'] = time.strftime("%d/%m/%Y")
+
 	def getInfo():
 		# Get information at parent level
 		tree = etree.parse(name)
@@ -98,6 +98,7 @@ def parseData(name):
 	ingredients = {}
 	formCodes = []
 	names = []
+	partnames = []
 	# info object, which will later be appended to prodMedicines array
 	info = {}
 	info['SPLCOLOR']  = []
@@ -142,7 +143,7 @@ def parseData(name):
 			# Get equal product code from <definingMaterialKind>
 			try:
 				equalProdParent = parent.xpath(".//*[local-name() = 'definingMaterialKind']")
-				
+
 				code = equalProdParent[0].xpath("./*[local-name() = 'code']")
 				if code[0].get('code') not in equalProdCodes:
 					equalProdCodes = code[0].get('code')
@@ -199,12 +200,12 @@ def parseData(name):
 					# Else just print the value from the first <containerPackagedProduct> level
 					else:
 						packageProducts.append(value[0].get('code'))
-	
+
 			# The getElements() function captures <manufacturedProduct> and </manufacturedProduct>, which is what
 			# we're seeing when pacakageProducts has length zero
 			if packageProducts:
 				info['NDC'].append(packageProducts)
-	
+
 			# Arrays for ingredients
 			active = []
 			inactive = []
@@ -216,15 +217,17 @@ def parseData(name):
 				level = parent
 				for child in parent.xpath("./*[local-name() = 'name']"):
 					names.append(child.text.strip())
-
 			else:
+				for child in parent.iterchildren('{urn:hl7-org:v3}name'):
+					names.append(child.text.strip())
+
 				partProduct = partChild.xpath("./*[local-name() = 'partProduct']")
 				if not partProduct:
 					partProduct = partChild.xpath("./*[local-name() = 'partMedicine']")
 
 				level = partProduct[0]
 				for child in partProduct[0].xpath("./*[local-name() = 'name']"):
-					names.append(child.text.strip())
+					partnames.append(child.text.strip())
 			for child in level.xpath("./*[local-name() = 'ingredient']"):
 				# Create temporary object for each ingredient
 				ingredientTemp = {}
@@ -247,13 +250,13 @@ def parseData(name):
 								ingredientTemp['substance_code'] = c.get('code')
 							if c.tag =='{urn:hl7-org:v3}activeMoiety' or c.tag == 'activeMoiety':
 								name = c.xpath(".//*[local-name() = 'name']")
-	
+
 								# Send active moiety to ingredientTemp
-								try: 
+								try:
 									ingredientTemp['active_moiety_names'].append(name[0].text.strip())
 								except:
 									ingredientTemp['active_moiety_names'].append('')
-	
+
 					for grandChild in child.xpath("./*[local-name() = 'quantity']"):
 						numerator = grandChild.xpath("./*[local-name() = 'numerator']")
 						denominator = grandChild.xpath("./*[local-name() = 'denominator']")
@@ -280,16 +283,81 @@ def parseData(name):
 								ingredientTemp['substance_name'] = c.text.strip()
 							if c.tag == '{urn:hl7-org:v3}code' or c.tag == 'code':
 								ingredientTemp['substance_code'] = c.get('code')
-				try: 
+				try:
 					ingredients[uniqueCode].append(ingredientTemp)
 				except:
 					# this is passed because of no uniqeCode assigned when not OSDF
 					continue
 
+			# For XML files that have different ingredient element syntax
+			# check for inactive ingredients
+			for child in level.xpath("./*[local-name() = 'inactiveIngredient']"):
+				# Create temporary object for each ingredient
+				ingredientTemp = {}
+				ingredientTemp['ingredient_type'] = {}
+				ingredientTemp['substance_code'] = {}
+				ingredientTrue = 1
+
+				for grandChild in child.xpath("./*[local-name() = 'inactiveIngredientSubstance']"):
+					for c in grandChild.iterchildren():
+						ingredientTemp['ingredient_type'] = 'inactive'
+						if c.tag == '{urn:hl7-org:v3}name' or c.tag =='name':
+							inactive.append(c.text.strip())
+							ingredientTemp['substance_name'] = c.text.strip()
+						if c.tag == '{urn:hl7-org:v3}code' or c.tag == 'code':
+							ingredientTemp['substance_code'] = c.get('code')
+				try:
+					ingredients[uniqueCode].append(ingredientTemp)
+				except:
+					# this is passed because of no uniqeCode assigned when not OSDF
+					continue
+
+			# For XML files that have different ingredient element syntax
+			# check for active ingredients
+			for child in level.xpath("./*[local-name() = 'activeIngredient']"):
+				ingredientTemp = {}
+				ingredientTemp['ingredient_type'] = {}
+				ingredientTemp['substance_code'] = {}
+				ingredientTemp['active_moiety_names'] = []
+				ingredientTrue = 1
+
+				for grandChild in child.xpath("./*[local-name() = 'activeIngredientSubstance']"):
+					for c in grandChild.iterchildren():
+						ingredientTemp['ingredient_type'] = 'active'
+						if c.tag == '{urn:hl7-org:v3}name' or c.tag == 'name':
+							active.append(c.text.strip())
+							splStrengthItem = c.text.strip()
+							ingredientTemp['substance_name'] = c.text.strip()
+						if c.tag == '{urn:hl7-org:v3}code' or c.tag == 'code':
+							ingredientTemp['substance_code'] = c.get('code')
+						if c.tag =='{urn:hl7-org:v3}activeMoiety' or c.tag == 'activeMoiety':
+							name = c.xpath(".//*[local-name() = 'name']")
+
+							# Send active moiety to ingredientTemp
+							try:
+								ingredientTemp['active_moiety_names'].append(name[0].text.strip())
+							except:
+								ingredientTemp['active_moiety_names'].append('')
+
+				for grandChild in child.xpath("./*[local-name() = 'quantity']"):
+					numerator = grandChild.xpath("./*[local-name() = 'numerator']")
+					denominator = grandChild.xpath("./*[local-name() = 'denominator']")
+
+					ingredientTemp['numerator_unit'] = numerator[0].get('unit')
+					ingredientTemp['numerator_value'] = numerator[0].get('value')
+					ingredientTemp['dominator_unit'] = denominator[0].get('unit')
+					ingredientTemp['dominator_value'] = denominator[0].get('value')
+					splStrengthValue = float(ingredientTemp['numerator_value']) / float(ingredientTemp['dominator_value'])
+					if str(splStrengthValue)[-1] == '0':
+						splStrengthValue = int(splStrengthValue)
+					splStrengthItem = "%s %s %s" % (splStrengthItem, splStrengthValue, ingredientTemp['numerator_unit'])
+					splStrength.append(splStrengthItem)
+
 			# Send code, name and formCode to info = {}
 			info['product_code'] = productCodes
 			info['part_num'] = partNumbers
 			info['medicine_name'] = names
+			info['part_medicine_name'] = partnames
 			info['dosage_code'] = formCodes
 			# If ingredientTrue was set to 1 above, we know we have ingredient information to append
 			if ingredientTrue != 0:
@@ -335,9 +403,9 @@ def parseData(name):
 
 			# If partCode is zero, we can find the <asContent> directly below the <manufacturedProduct> parent
 			# else we need to iterate thorugh the <partProduct> of the <part>, from proceed() function
-			
 
-			
+
+
 			if partCode == 'zero':
 				level = parent
 			else:
@@ -348,12 +416,12 @@ def parseData(name):
 					for grandChild in child.xpath(".//*[local-name() = 'approval']"):
 						statusCode = grandChild.xpath("./*[local-name() = 'code']")
 						info['APPROVAL_CODE'].append(statusCode[0].get('code'))
-				except: 
-					info['APPROVAL_CODE'].append('')
+				except:
+					info['APPROVAL_CODE'].append(None)
 				#Get marketing act code
 				for grandChild in child.xpath("./*[local-name() = 'marketingAct']"):
 					statusCode = grandChild.xpath("./*[local-name() = 'statusCode']")
-			
+
 					info['MARKETING_ACT_CODE'].append(statusCode[0].get('code'))
 				# Get policy code
 				for grandChild in child.xpath("./*[local-name() = 'policy']"):
@@ -365,7 +433,7 @@ def parseData(name):
 					for each in grandChild.xpath("./*[local-name() = 'code']"):
 						# Run each type through the CheckForValues() function above
 						ctype = each.get('code')
-						# checks for duplicate spl types, splcolor can happen twice 
+						# checks for duplicate spl types, splcolor can happen twice
 						if ctype in previous:
 							idx = len(info[ctype]) - 1
 							checkForValues(ctype, grandChild, '1', idx)
@@ -419,9 +487,9 @@ def parseData(name):
 					'SPL_INGREDIENTS','SPL_INACTIVE_ING','SPLSCORE','SPLSIZE',
 					'product_code','part_num','dosage_code','MARKETING_ACT_CODE',
 					'DEA_SCHEDULE_CODE','DEA_SCHEDULE_NAME','NDC','equal_product_code',
-					'SPL_STRENGTH'
+					'SPL_STRENGTH','part_medicine_name'
 					]
-	setInfoNames = ['file_name','effective_time','id_root','date_created','setid','document_type','source']
+	setInfoNames = ['file_name','effective_time','id_root','dailymed_date','setid','document_type','source']
 	sponsorNames = ['author','author_type']
 
 	# Loop through prodMedicines as many times as there are unique product codes + part codes combinations, which is len(codes)
@@ -434,8 +502,8 @@ def parseData(name):
 			product['setid_product'] = uniqueID
 			product['ndc_codes'] = prodMedicines[0]['NDC'][i]
 			tempProduct = {}
-			for name in prodMedNames: 
-				# Get information at the correct index 
+			for name in prodMedNames:
+				# Get information at the correct index
 				try:
 					if name == 'SPLIMAGE':
 						image_file = setInfo['id_root'] + '_' + prodMedicines[0]['product_code'][i] + '_' + prodMedicines[0]['part_num'][i] + '_' + "_".join(prodMedicines[0][name][i])
@@ -444,15 +512,15 @@ def parseData(name):
 						tempProduct[name] = prodMedicines[0][name][i]
 				except:
 					tempProduct[name] = ''
-			for name in setInfoNames: 
+			for name in setInfoNames:
 				tempProduct[name] = setInfo[name]
-			for name in sponsorNames: 
+			for name in sponsorNames:
 				try:
 					tempProduct[name] = sponsors[name]
 				except:
 					tempProduct[name] = ''
 			product['data'] = tempProduct
-			# Ingredients are showing duplicates again leaving out while fixing.  
+			# Ingredients are showing duplicates again leaving out while fixing.
 			product['ingredients'] = ingredients[codes[i]]
 			products.append(product)
 		return products
@@ -461,5 +529,6 @@ def parseData(name):
 
 #Use this code to run xpath on the tmp-unzipped files without other scripts
 if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/0247493a-8221-44f5-afa6-071bde3bfac2.xml")
+	#test = parseData("../tmp/tmp-unzipped/HRX/8834bbd7-c7ae-41e0-9d54-0178f76886ae.xml")
+	test = parseData("../tmp/tmp-unzipped/HRX/Le72300d9-89b4-48c7-98a5-ea5d7772305e.xml")
 	print test
