@@ -15,6 +15,7 @@ fi
 mkdir -p ../tmp
 mkdir -p ../tmp/tmp-original
 mkdir -p ../tmp/tmp-unzipped
+mkdir -p ../tmp/tmp-images
 mkdir -p ../tmp/processed/json
 mkdir -p ../tmp/processed/csv
 mkdir -p ../tmp/errors
