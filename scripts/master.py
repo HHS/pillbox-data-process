@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Import Python Modules 
+# Import Python Modules
 import os
 import sys
 import time
@@ -32,8 +32,8 @@ def xmlProcess(fn):
 	global file_count
 	try:
 		file_count = file_count + 1
-		# run xpath.py on each file 
-		xmlData = parseData(fn) 
+		# run xpath.py on each file
+		xmlData = parseData(fn)
 
 		for x in xmlData:
 			rxnormData = rxNorm(x['ndc_codes'])
@@ -57,7 +57,7 @@ def xmlProcess(fn):
 		# Make CSV file for output, one row per SETID-NDC code
 		makecsv.makeCSV(xmlData)
 	except:
-		error.xmlError(fn)	
+		error.xmlError(fn)
 
 class ThreadXML(threading.Thread):
 	def __init__(self, queue):
@@ -72,10 +72,10 @@ class ThreadXML(threading.Thread):
 			xmlProcess(fn)
 
 			#signals to queue job is done
-			self.queue.task_done()	  
+			self.queue.task_done()
 
 def main():
-	#spawn a pool of threads, and pass them queue instance 
+	#spawn a pool of threads, and pass them queue instance
 	for i in range(20):
 		t = ThreadXML(queue)
 		t.setDaemon(True)
@@ -86,15 +86,16 @@ def main():
 		files = glob.glob('%s/*.xml' % d)
 		for fn in files:
 			queue.put(fn)
-	#wait on the queue until everything has been processed     
-	queue.join()	
+	#wait on the queue until everything has been processed
+	queue.join()
 
 main()
 
-# Calculate the total time and print to console. 
+# Calculate the total time and print to console.
 master_t1 = time.time()
 total_time = (master_t1-master_t0)/60
 print file_count, "XML files processed"
 error.errorWrite()
 makecsv.closeCSV()
+makecsv.makeDataPackage()
 print "Processing complete. Total Processing time = %d minutes" % total_time

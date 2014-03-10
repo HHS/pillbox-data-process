@@ -134,139 +134,64 @@ def makeDataPackage():
 				  "date_updated": today,
 				  "resources": [
 				    {
-				      "path": "spl_data.csv",
-				      "schema": {
-				        "fields": [
-				          {
-				            "name": "setid",
-				            "type": "string"
-				          },
-				          {
-				            "name": "file_name",
-				            "type": "string"
-				          },
-				          {
-				            "name": "medicine_name",
-				            "type": "string"
-				          },
-				          {
-				            "name": "product_code",
-				            "type": "string"
-				          },
-				          {
-				            "name": "part_num",
-				            "type": "integer"
-				          },
-				          {
-				            "name": "ndc9",
-				            "type": "string"
-				          },
-				          {
-				            "name": "author",
-				            "type": "string"
-				          },
-				          {
-				            "name": "author_type",
-				            "type": "string"
-				          },
-				          {
-				            "name": "date_created",
-				            "type": "string"
-				          },
-				          {
-				            "name": "effective_time",
-				            "type": "integer"
-				          },
-				          {
-				            "name": "DEA_SCHEDULE_CODE",
-				            "type": "string"
-				          },
-				          {
-				            "name": "DEA_SCHEDULE_NAME",
-				            "type": "string"
-				          },
-				          {
-				            "name": "MARKETING_ACT_CODE",
-				            "type": "string"
-				          },
-				          {
-				            "name": "NDC",
-				            "type": "string"
-				          },
-				          {
-				            "name": "SPLCOLOR",
-				            "type": "string"
-				          },
-				          {
-				            "name": "SPLIMAGE",
-				            "type": "string"
-				          },
-				          {
-				            "name": "SPLIMPRINT",
-				            "type": "string"
-				          },
-				          {
-				            "name": "SPLCOLOR",
-				            "type": "string"
-				          },
-				          {
-				            "name": "SPLSCORE",
-				            "type": "integer"
-				          },
-				          {
-				            "name": "SPLSHAPE",
-				            "type": "string"
-				          },
-				          {
-				            "name": "SPLSIZE",
-				            "type": "integer"
-				          },
-				          {
-				            "name": "SPL_INACTIVE_ING",
-				            "type": "string"
-				          },
-				          {
-				            "name": "SPL_INGREDIENTS",
-				            "type": "string"
-				          },
-				          {
-				            "name": "SPL_STRENGTH",
-				            "type": "string"
-				          },
-				          {
-				            "name": "SPLSHAPE",
-				            "type": "string"
-				          },
-				          {
-				            "name": "document_type",
-				            "type": "string"
-				          },
-				          {
-				            "name": "dosage_code",
-				            "type": "string"
-				          },
-				          {
-				            "name": "rxcui",
-				            "type": "string"
-				          },
-				          {
-				            "name": "rxstring",
-				            "type": "string"
-				          },
-				          {
-				            "name": "rxtty",
-				            "type": "string"
-				          },
-				          {
-				            "name": "source",
-				            "type": "string"
-				          },
-				          {
-				            "name": "equal_product_code",
-				            "type": "string"
-				          }
-				        ]
-				      }
-				    }
+						"path": "spl_data.csv",
+						"schema": {
+						"fields": [
+						  {"name": "setid","type": "string"},
+						  {"name": "file_name","type": "string"},
+						  {"name": "medicine_name","type": "string"},
+						  {"name": "product_code","type": "string"},
+						  {"name": "part_num","type": "integer"},
+						  {"name": "ndc9","type": "string"},
+						  {"name": "author","type": "string"},
+						  {"name": "author_type","type": "string"},
+						  {"name": "date_created","type": "string"},
+						  {"name": "effective_time","type": "integer"},
+						  {"name": "DEA_SCHEDULE_CODE","type": "string"},
+						  {"name": "DEA_SCHEDULE_NAME","type": "string"},
+						  {"name": "MARKETING_ACT_CODE","type": "string"},
+						  {"name": "NDC","type": "string"},
+						  {"name": "SPLCOLOR","type": "string"},
+						  {"name": "SPLIMAGE","type": "string"},
+						  {"name": "SPLIMPRINT","type": "string"},
+						  {"name": "SPLCOLOR","type": "string"},
+						  {"name": "SPLSCORE","type": "integer"},
+						  {"name": "SPLSHAPE","type": "string"},
+						  {"name": "SPLSIZE","type": "integer"},
+						  {"name": "SPL_INACTIVE_ING","type": "string"},
+						  {"name": "SPL_INGREDIENTS","type": "string"},
+						  {"name": "SPL_STRENGTH","type": "string"},
+						  {"name": "SPLSHAPE","type": "string"},
+						  {"name": "document_type","type": "string"},
+						  {"name": "dosage_code","type": "string"},
+						  {"name": "rxcui","type": "string"},
+						  {"name": "rxstring","type": "string"},
+						  {"name": "rxtty","type": "string"},
+						  {"name": "source","type": "string"},
+						  {"name": "equal_product_code","type": "string"}
+						]
+						}
+				    },
+					{
+						"path": "spl_ingredients.csv",
+						"schema": {
+							"fields": [
+							{"name": "product_code","type": "string"},
+							{"name": "setid","type": "string"},
+							{"name": "part_num","type": "string"},
+							{"name": "numerator_value","type": "string"},
+							{"name": "numerator_unit","type": "string"},
+							{"name": "denominator_value","type": "string"},
+							{"name": "denominator_unit","type": "string"},
+							{"name": "base_of_strength","type": "string"}
+							]
+						}
+					}
 				  ]
 				}
+
+	writeout = json.dumps(datapackage, sort_keys=True, separators=(',',':'), indent=4 * ' ')
+	f_out = open('../../../api/datapackage.json', 'wb')
+	f_out.writelines(writeout)
+	f_out.close()
+	print "Datapackage.json created..."
