@@ -381,7 +381,10 @@ def parseData(name):
 					if ctype == 'SPLCOLOR':
 						if dup == '1':
 							color1 = info[ctype][idx]
-							color2 = value.get('code')
+							if value.get('code') == None:
+								color2 = ''
+							else:
+								color2 = value.get('code')
 							info[ctype][idx] = "%s;%s" % (color1,color2)
 						else:
 							info[ctype].append(value.get('code'))
@@ -417,7 +420,7 @@ def parseData(name):
 						statusCode = grandChild.xpath("./*[local-name() = 'code']")
 						info['APPROVAL_CODE'].append(statusCode[0].get('code'))
 				except:
-					info['APPROVAL_CODE'].append(None)
+					info['APPROVAL_CODE'].append('')
 				#Get marketing act code
 				for grandChild in child.xpath("./*[local-name() = 'marketingAct']"):
 					statusCode = grandChild.xpath("./*[local-name() = 'statusCode']")
@@ -529,6 +532,5 @@ def parseData(name):
 
 #Use this code to run xpath on the tmp-unzipped files without other scripts
 if __name__ == "__main__":
-	#test = parseData("../tmp/tmp-unzipped/HRX/8834bbd7-c7ae-41e0-9d54-0178f76886ae.xml")
-	test = parseData("../tmp/tmp-unzipped/HRX/Le72300d9-89b4-48c7-98a5-ea5d7772305e.xml")
+	test = parseData("../tmp/tmp-unzipped/HRX/01F99FFF-4CD8-401F-9481-9CAC4E87BA2D.xml")
 	print test
