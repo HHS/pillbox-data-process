@@ -191,7 +191,7 @@ def makeDataPackage():
 				}
 
 	writeout = json.dumps(datapackage, sort_keys=True, separators=(',',':'), indent=4 * ' ')
-	f_out = open('../../../api/datapackage.json', 'wb')
+	f_out = open('../api/datapackage.json', 'wb')
 	f_out.writelines(writeout)
 	f_out.close()
 	print "Datapackage.json created..."
