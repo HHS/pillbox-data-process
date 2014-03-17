@@ -217,6 +217,7 @@ def parseData(name):
 				level = parent
 				for child in parent.xpath("./*[local-name() = 'name']"):
 					names.append(child.text.strip())
+					partnames.append('')
 			else:
 				for child in parent.iterchildren('{urn:hl7-org:v3}name'):
 					names.append(child.text.strip())
