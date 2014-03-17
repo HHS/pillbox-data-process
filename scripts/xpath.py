@@ -81,7 +81,7 @@ def parseData(name):
 		for child in parent.xpath(".//*[local-name() = 'representedOrganization']"):
 			for grandChild in child.xpath("./*[local-name() = 'name']"):
 				sponsors['author'] = grandChild.text.strip()
-				sponsors['author_type'] = 'labler'
+				sponsors['author_type'] = 'labeler'
 				grandChild.clear()
 
 	for parent in getelements(name, "{urn:hl7-org:v3}legalAuthenticator", 'no'):
