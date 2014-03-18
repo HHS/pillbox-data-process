@@ -115,7 +115,7 @@ def parseData(name):
 	info['SPL_INACTIVE_ING'] = []
 	info['SPL_STRENGTH'] = []
 	info['SPLCONTAINS'] = []
-	info['APPROVAL_CODE'] = []
+	info['approval_code'] = []
 	info['MARKETING_ACT_CODE'] = []
 	info['DEA_SCHEDULE_CODE'] = []
 	info['DEA_SCHEDULE_NAME'] = []
@@ -359,7 +359,7 @@ def parseData(name):
 			info['part_num'] = partNumbers
 			info['medicine_name'] = names
 			info['part_medicine_name'] = partnames
-			info['dosage_code'] = formCodes
+			info['dosage_form'] = formCodes
 			# If ingredientTrue was set to 1 above, we know we have ingredient information to append
 			if ingredientTrue != 0:
 				info['equal_product_code'].append(equalProdCodes)
@@ -423,7 +423,7 @@ def parseData(name):
 					# Get Approval code
 					for grandChild in child.xpath(".//*[local-name() = 'approval']"):
 						statusCode = grandChild.xpath("./*[local-name() = 'code']")
-						info['APPROVAL_CODE'].append(statusCode[0].get('code'))
+						info['approval_code'].append(statusCode[0].get('code'))
 					#Get marketing act code
 					for grandChild in child.xpath("./*[local-name() = 'marketingAct']"):
 						statusCode = grandChild.xpath("./*[local-name() = 'statusCode']")
@@ -458,7 +458,7 @@ def parseData(name):
 					info['DEA_SCHEDULE_NAME'].append('')
 				approval = '{urn:hl7-org:v3}approval'
 				if approval not in subjectOfCheck:
-					info['APPROVAL_CODE'].append('')
+					info['approval_code'].append('')
 
 		# Check if there are <parts> in the manufactured product, if not, partCode = 0
 		parts = parent.xpath("./*[local-name() = 'part']")
@@ -499,9 +499,9 @@ def parseData(name):
 	prodMedNames = [
 					'SPLCOLOR','SPLIMAGE','SPLIMPRINT','medicine_name','SPLSHAPE',
 					'SPL_INGREDIENTS','SPL_INACTIVE_ING','SPLSCORE','SPLSIZE',
-					'product_code','part_num','dosage_code','MARKETING_ACT_CODE',
+					'product_code','part_num','dosage_form','MARKETING_ACT_CODE',
 					'DEA_SCHEDULE_CODE','DEA_SCHEDULE_NAME','NDC','equal_product_code',
-					'SPL_STRENGTH','part_medicine_name','APPROVAL_CODE'
+					'SPL_STRENGTH','part_medicine_name','approval_code'
 					]
 	setInfoNames = ['file_name','effective_time','id_root','dailymed_date','setid','document_type','source']
 	sponsorNames = ['author','author_type']

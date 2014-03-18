@@ -34,13 +34,13 @@ dataHeader = [
 		"SPL_INGREDIENTS",
 		"SPL_STRENGTH",
 		"document_type",
-		"dosage_code",
+		"dosage_form",
 		"rxcui",
 		"rxstring",
 		"rxtty",
 		"source",
 		"equal_product_code",
-		"APPROVAL_CODE"
+		"approval_code"
 		]
 
 ingredientsHeader = [
@@ -164,12 +164,13 @@ def makeDataPackage():
 						  {"name": "SPL_STRENGTH","type": "string"},
 						  {"name": "SPLSHAPE","type": "string"},
 						  {"name": "document_type","type": "string"},
-						  {"name": "dosage_code","type": "string"},
+						  {"name": "dosage_form","type": "string"},
 						  {"name": "rxcui","type": "string"},
 						  {"name": "rxstring","type": "string"},
 						  {"name": "rxtty","type": "string"},
 						  {"name": "source","type": "string"},
-						  {"name": "equal_product_code","type": "string"}
+						  {"name": "equal_product_code","type": "string"},
+						  {"name": "approval_code","type": "string"}
 						]
 						}
 				    },
