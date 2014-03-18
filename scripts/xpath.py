@@ -457,7 +457,7 @@ def parseData(name):
 					info['DEA_SCHEDULE_CODE'].append('')
 					info['DEA_SCHEDULE_NAME'].append('')
 				approval = '{urn:hl7-org:v3}approval'
-				if approval not in subjectOfCheck:
+				if approval not in subjectOfcheck:
 					info['approval_code'].append('')
 
 		# Check if there are <parts> in the manufactured product, if not, partCode = 0
@@ -543,5 +543,5 @@ def parseData(name):
 
 #Use this code to run xpath on the tmp-unzipped files without other scripts
 if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/HRX/102106e5-3864-40cb-a658-cf8dd7978422.xml")
+	test = parseData("../tmp/tmp-unzipped/HRX/7fd4976d-720c-40ee-8723-a703645d4ff0.xml")
 	print test
