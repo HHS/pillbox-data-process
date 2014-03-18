@@ -414,41 +414,51 @@ def parseData(name):
 				level = parent
 			else:
 				level = partChild
-			previous = []
-			for child in level.xpath("./*[local-name() = 'subjectOf']"):
-				try:
+			if level.xpath("./*[local-name() = 'subjectOf']"):
+				previous = []
+				subjectOfcheck = []
+				for child in level.xpath("./*[local-name() = 'subjectOf']"):
+					for c in child:
+						subjectOfcheck.append(c.tag)
+					# Get Approval code
 					for grandChild in child.xpath(".//*[local-name() = 'approval']"):
 						statusCode = grandChild.xpath("./*[local-name() = 'code']")
 						info['APPROVAL_CODE'].append(statusCode[0].get('code'))
-				except:
+					#Get marketing act code
+					for grandChild in child.xpath("./*[local-name() = 'marketingAct']"):
+						statusCode = grandChild.xpath("./*[local-name() = 'statusCode']")
+						info['MARKETING_ACT_CODE'].append(statusCode[0].get('code'))
+
+					# Get policy code
+					for grandChild in child.xpath("./*[local-name() = 'policy']"):
+						for each in grandChild.xpath("./*[local-name() = 'code']"):
+							info['DEA_SCHEDULE_CODE'].append(each.get('code'))
+							info['DEA_SCHEDULE_NAME'].append(each.get('displayName'))
+
+					for grandChild in child.xpath("./*[local-name() = 'characteristic']"):
+						for each in grandChild.xpath("./*[local-name() = 'code']"):
+							# Run each type through the CheckForValues() function above
+							ctype = each.get('code')
+							# checks for duplicate spl types, splcolor can happen twice
+							if ctype in previous:
+								idx = len(info[ctype]) - 1
+								checkForValues(ctype, grandChild, '1', idx)
+							else:
+								idx = len(info[ctype])
+								if idx < len(codes) - 1:
+									info[ctype].append('')
+								checkForValues(ctype, grandChild, '0', 0)
+							previous.append(ctype)
+							each.clear()   #clear memory
+						grandChild.clear() #clear memory
+				# check if dea policy code is in product or not
+				policy = '{urn:hl7-org:v3}policy'
+				if policy not in subjectOfcheck:
+					info['DEA_SCHEDULE_CODE'].append('')
+					info['DEA_SCHEDULE_NAME'].append('')
+				approval = '{urn:hl7-org:v3}approval'
+				if approval not in subjectOfCheck:
 					info['APPROVAL_CODE'].append('')
-				#Get marketing act code
-				for grandChild in child.xpath("./*[local-name() = 'marketingAct']"):
-					statusCode = grandChild.xpath("./*[local-name() = 'statusCode']")
-
-					info['MARKETING_ACT_CODE'].append(statusCode[0].get('code'))
-				# Get policy code
-				for grandChild in child.xpath("./*[local-name() = 'policy']"):
-					for each in grandChild.xpath("./*[local-name() = 'code']"):
-						info['DEA_SCHEDULE_CODE'].append(each.get('code'))
-						info['DEA_SCHEDULE_NAME'].append(each.get('displayName'))
-
-				for grandChild in child.xpath("./*[local-name() = 'characteristic']"):
-					for each in grandChild.xpath("./*[local-name() = 'code']"):
-						# Run each type through the CheckForValues() function above
-						ctype = each.get('code')
-						# checks for duplicate spl types, splcolor can happen twice
-						if ctype in previous:
-							idx = len(info[ctype]) - 1
-							checkForValues(ctype, grandChild, '1', idx)
-						else:
-							idx = len(info[ctype])
-							if idx < len(codes) - 1:
-								info[ctype].append('')
-							checkForValues(ctype, grandChild, '0', 0)
-						previous.append(ctype)
-						each.clear()   #clear memory
-					grandChild.clear() #clear memory
 
 		# Check if there are <parts> in the manufactured product, if not, partCode = 0
 		parts = parent.xpath("./*[local-name() = 'part']")
@@ -491,7 +501,7 @@ def parseData(name):
 					'SPL_INGREDIENTS','SPL_INACTIVE_ING','SPLSCORE','SPLSIZE',
 					'product_code','part_num','dosage_code','MARKETING_ACT_CODE',
 					'DEA_SCHEDULE_CODE','DEA_SCHEDULE_NAME','NDC','equal_product_code',
-					'SPL_STRENGTH','part_medicine_name'
+					'SPL_STRENGTH','part_medicine_name','APPROVAL_CODE'
 					]
 	setInfoNames = ['file_name','effective_time','id_root','dailymed_date','setid','document_type','source']
 	sponsorNames = ['author','author_type']
@@ -533,5 +543,5 @@ def parseData(name):
 
 #Use this code to run xpath on the tmp-unzipped files without other scripts
 if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/HRX/01F99FFF-4CD8-401F-9481-9CAC4E87BA2D.xml")
+	test = parseData("../tmp/tmp-unzipped/HRX/102106e5-3864-40cb-a658-cf8dd7978422.xml")
 	print test

@@ -39,7 +39,8 @@ dataHeader = [
 		"rxstring",
 		"rxtty",
 		"source",
-		"equal_product_code"
+		"equal_product_code",
+		"APPROVAL_CODE"
 		]
 
 ingredientsHeader = [
