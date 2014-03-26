@@ -135,20 +135,9 @@ def parseData(name):
 	for parent in getelements(name, "{urn:hl7-org:v3}manufacturedProduct", 'yes'):
 
 		def proceed(partCode, partChild, index):
-			equalProdCodes = ''
 			# There are <manufacturedProduct> elements that have no content and would result
 			# in empty objects being appended to ingredients array. So use ingredientTrue to test.
 			ingredientTrue = 0
-
-			# Get equal product code from <definingMaterialKind>
-			try:
-				equalProdParent = parent.xpath(".//*[local-name() = 'definingMaterialKind']")
-
-				code = equalProdParent[0].xpath("./*[local-name() = 'code']")
-				if code[0].get('code') not in equalProdCodes:
-					equalProdCodes = code[0].get('code')
-			except:
-				equalProdCodes = ''
 
 			if partCode == 'zero':
 				getInfo()
@@ -236,7 +225,7 @@ def parseData(name):
 				ingredientTemp['substance_code'] = {}
 
 				# If statement to find active ingredients
-				if child.get('classCode') == 'ACTIB' or child.get('classCode') == 'ACTIM':
+				if child.get('classCode') == 'ACTIB' or child.get('classCode') == 'ACTIM' or child.get('classCode') == 'ACTIR':
 					ingredientTrue = 1
 					ingredientTemp['active_moiety_names'] = []
 
@@ -360,9 +349,14 @@ def parseData(name):
 			info['medicine_name'] = names
 			info['part_medicine_name'] = partnames
 			info['dosage_form'] = formCodes
+			try:
+				if equalProdCodes not in info['equal_product_code']:
+					info['equal_product_code'].append(equalProdCodes)
+			except:
+				pass
+
 			# If ingredientTrue was set to 1 above, we know we have ingredient information to append
 			if ingredientTrue != 0:
-				info['equal_product_code'].append(equalProdCodes)
 				info['SPL_INGREDIENTS'].append(active)
 				info['SPL_INACTIVE_ING'].append(inactive)
 				info['SPL_STRENGTH'].append(splStrength)
@@ -463,6 +457,19 @@ def parseData(name):
 		# Check if there are <parts> in the manufactured product, if not, partCode = 0
 		parts = parent.xpath("./*[local-name() = 'part']")
 		if not parts:
+			# Get equal product code from <definingMaterialKind>
+			equiv = parent.xpath(".//*[local-name() = 'asEquivalentEntity']")
+			if equiv:
+				for child in parent.xpath(".//*[local-name() = 'asEquivalentEntity']"):
+					equalProdParent = parent.xpath(".//*[local-name() = 'definingMaterialKind']")
+					code = equalProdParent[0].xpath("./*[local-name() = 'code']")
+					equalProdCodes = code[0].get('code')
+			else:
+				# check place in xpath. check if in a correct place to look for a missing equal product code element
+				correct = parent.xpath(".//*[local-name() = 'manufacturedProduct']")
+				if correct:
+					equalProdCodes = ''
+
 			# Check for child <manufacturedProduct>, if exists, check formCode
 			childProduct = parent.xpath(".//*[local-name() = 'manufacturedProduct']")
 			if childProduct:
@@ -483,6 +490,16 @@ def parseData(name):
 			# Set up an index to pass to proceed() function to determine part number
 			index = 1
 			for child in parts:
+				# Get equal product code from <definingMaterialKind>
+				equiv = child.xpath(".//*[local-name() = 'asEquivalentEntity']")
+				if equiv:
+					for c in child.xpath(".//*[local-name() = 'asEquivalentEntity']"):
+						equalProdParent = c.xpath(".//*[local-name() = 'definingMaterialKind']")
+						code = equalProdParent[0].xpath("./*[local-name() = 'code']")
+						equalProdCodes = code[0].get('code')
+				else:
+					equalProdCodes = ''
+
 				formCode =  child.xpath(".//*[local-name() = 'formCode']")
 
 				# Check if formCode is in codeChecks
@@ -543,5 +560,5 @@ def parseData(name):
 
 #Use this code to run xpath on the tmp-unzipped files without other scripts
 if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/HRX/7fd4976d-720c-40ee-8723-a703645d4ff0.xml")
+	test = parseData("../tmp/tmp-unzipped/HRX/6605aaf0-7388-4f92-8499-2777aac23851.xml")
 	print test
