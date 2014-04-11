@@ -101,15 +101,15 @@ def parseData(name):
 	partnames = []
 	# info object, which will later be appended to prodMedicines array
 	info = {}
-	info['SPLCOLOR']  = []
+	info['SPLCOLOR'] = []
 	info['SPLIMPRINT'] = []
 	info['SPLSHAPE'] = []
 	info['SPLSIZE'] = []
-	info['SPLSCORE']  = []
-	info['SPLCOATING']  = []
-	info['SPLSYMBOL']  = []
-	info['SPLFLAVOR']  = []
-	info['SPLIMAGE']  = []
+	info['SPLSCORE'] = []
+	info['SPLCOATING'] = []
+	info['SPLSYMBOL'] = []
+	info['SPLFLAVOR'] = []
+	info['SPLIMAGE'] = []
 	info['IMAGE_SOURCE'] = []
 	info['SPL_INGREDIENTS'] = []
 	info['SPL_INACTIVE_ING'] = []
@@ -131,9 +131,9 @@ def parseData(name):
 	codes = []
 	productCodes = []
 	partNumbers = []
+	eqDup = ''
 
 	for parent in getelements(name, "{urn:hl7-org:v3}manufacturedProduct", 'yes'):
-
 		def proceed(partCode, partChild, index):
 			# There are <manufacturedProduct> elements that have no content and would result
 			# in empty objects being appended to ingredients array. So use ingredientTrue to test.
@@ -349,11 +349,6 @@ def parseData(name):
 			info['medicine_name'] = names
 			info['part_medicine_name'] = partnames
 			info['dosage_form'] = formCodes
-			try:
-				if equalProdCodes not in info['equal_product_code']:
-					info['equal_product_code'].append(equalProdCodes)
-			except:
-				pass
 
 			# If ingredientTrue was set to 1 above, we know we have ingredient information to append
 			if ingredientTrue != 0:
@@ -457,19 +452,6 @@ def parseData(name):
 		# Check if there are <parts> in the manufactured product, if not, partCode = 0
 		parts = parent.xpath("./*[local-name() = 'part']")
 		if not parts:
-			# Get equal product code from <definingMaterialKind>
-			equiv = parent.xpath(".//*[local-name() = 'asEquivalentEntity']")
-			if equiv:
-				for child in parent.xpath(".//*[local-name() = 'asEquivalentEntity']"):
-					equalProdParent = parent.xpath(".//*[local-name() = 'definingMaterialKind']")
-					code = equalProdParent[0].xpath("./*[local-name() = 'code']")
-					equalProdCodes = code[0].get('code')
-			else:
-				# check place in xpath. check if in a correct place to look for a missing equal product code element
-				correct = parent.xpath(".//*[local-name() = 'manufacturedProduct']")
-				if correct:
-					equalProdCodes = ''
-
 			# Check for child <manufacturedProduct>, if exists, check formCode
 			childProduct = parent.xpath(".//*[local-name() = 'manufacturedProduct']")
 			if childProduct:
@@ -484,6 +466,24 @@ def parseData(name):
 					continue
 				else:
 					formCodes.append(formCode[0].get('code'))
+
+					# Get equal product code from <definingMaterialKind>
+					equiv = parent.xpath(".//*[local-name() = 'asEquivalentEntity']")
+					if equiv:
+						for child in parent.xpath(".//*[local-name() = 'asEquivalentEntity']"):
+							# duplicate check
+							if child != eqDup:
+								equalProdParent = parent.xpath(".//*[local-name() = 'definingMaterialKind']")
+								code = equalProdParent[0].xpath("./*[local-name() = 'code']")
+								equalProdCodes = code[0].get('code')
+								info['equal_product_code'].append(equalProdCodes)
+							eqDup = child
+					else:
+						# check place in xpath. check if in a correct place to look for a missing equal product code element
+						correct = parent.xpath(".//*[local-name() = 'manufacturedProduct']")
+						if correct:
+							equalProdCodes = ''
+							info['equal_product_code'].append(equalProdCodes)
 			# No parts found, so part number is zero, send to proceed() function
 			proceed('zero','','')
 		else:
@@ -497,8 +497,10 @@ def parseData(name):
 						equalProdParent = c.xpath(".//*[local-name() = 'definingMaterialKind']")
 						code = equalProdParent[0].xpath("./*[local-name() = 'code']")
 						equalProdCodes = code[0].get('code')
+						info['equal_product_code'].append(equalProdCodes)
 				else:
 					equalProdCodes = ''
+					info['equal_product_code'].append(equalProdCodes)
 
 				formCode =  child.xpath(".//*[local-name() = 'formCode']")
 
@@ -560,5 +562,5 @@ def parseData(name):
 
 #Use this code to run xpath on the tmp-unzipped files without other scripts
 if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/HRX/6605aaf0-7388-4f92-8499-2777aac23851.xml")
+	test = parseData("../tmp/tmp-unzipped/HRX/b95cd483-64ca-4840-948d-eaf1e13e58b2.xml")
 	print test
