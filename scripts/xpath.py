@@ -539,7 +539,7 @@ def parseData(name):
 				# Get information at the correct index
 				try:
 					if name == 'SPLIMAGE':
-						image_file = setInfo['id_root'] + '_' + prodMedicines[0]['product_code'][i] + '_' + prodMedicines[0]['part_num'][i] + '_' + "_".join(prodMedicines[0][name][i])
+						image_file = setInfo['setid'] + '_' + prodMedicines[0]['product_code'][i] + '_' + prodMedicines[0]['part_num'][i] + '_' + "_".join(prodMedicines[0][name][i])
 						tempProduct[name] = image_file
 					else:
 						tempProduct[name] = prodMedicines[0][name][i]
@@ -562,5 +562,5 @@ def parseData(name):
 
 #Use this code to run xpath on the tmp-unzipped files without other scripts
 if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/HRX/b95cd483-64ca-4840-948d-eaf1e13e58b2.xml")
+	test = parseData("../tmp/tmp-unzipped/HRX/eb4c19df-36b0-4d04-8d4b-e0f8ba024d38.xml")
 	print test
