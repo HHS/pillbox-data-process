@@ -159,7 +159,7 @@ def parseData(name):
 					if uniqueCode not in codes:
 						codes.append(uniqueCode)
 						productCodes.append(productCode.get('code'))
-						partNumbers.append(index)
+						partNumbers.append(str(index))
 
 			# Get <containerPackagedProduct> information
 			packageProducts = []
@@ -386,11 +386,11 @@ def parseData(name):
 						else:
 							info[ctype].append(value.get('code') or value.get('value'))
 					elif ctype == 'SPLIMAGE':
-						if reference[0].get('value') == None:
-							info[ctype].append('')
-						else:
+						if reference[0].get('value'):
 							splfile = reference[0].get('value').split()
 							info[ctype].append(splfile)
+						else:
+							info[ctype].append('')
 					else:
 						info[ctype].append(value.get('code') or value.get('value'))
 
@@ -434,8 +434,10 @@ def parseData(name):
 								checkForValues(ctype, grandChild, '1', idx)
 							else:
 								idx = len(info[ctype])
-								if idx < len(codes) - 1:
-									info[ctype].append('')
+								diff = len(codes) - 1
+								if idx < diff:
+									for i in range(diff - idx):
+										info[ctype].append('')
 								checkForValues(ctype, grandChild, '0', 0)
 							previous.append(ctype)
 							each.clear()   #clear memory
@@ -539,8 +541,11 @@ def parseData(name):
 				# Get information at the correct index
 				try:
 					if name == 'SPLIMAGE':
-						image_file = setInfo['setid'] + '_' + prodMedicines[0]['product_code'][i] + '_' + prodMedicines[0]['part_num'][i] + '_' + "_".join(prodMedicines[0][name][i])
-						tempProduct[name] = image_file
+						if prodMedicines[0][name][i] != '':
+							image_file = setInfo['setid'] + '_' + prodMedicines[0]['product_code'][i] + '_' + prodMedicines[0]['part_num'][i] + '_' + "_".join(prodMedicines[0][name][i])
+							tempProduct[name] = image_file
+						else:
+							tempProduct[name] = ''
 					else:
 						tempProduct[name] = prodMedicines[0][name][i]
 				except:
@@ -562,5 +567,5 @@ def parseData(name):
 
 #Use this code to run xpath on the tmp-unzipped files without other scripts
 if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/HRX/eb4c19df-36b0-4d04-8d4b-e0f8ba024d38.xml")
+	test = parseData("../tmp/tmp-unzipped/HRX/01F99FFF-4CD8-401F-9481-9CAC4E87BA2D.xml")
 	print test
