@@ -481,11 +481,8 @@ def parseData(name):
 								info['equal_product_code'].append(equalProdCodes)
 							eqDup = child
 					else:
-						# check place in xpath. check if in a correct place to look for a missing equal product code element
-						correct = parent.xpath(".//*[local-name() = 'manufacturedProduct']")
-						if correct:
-							equalProdCodes = ''
-							info['equal_product_code'].append(equalProdCodes)
+						equalProdCodes = ''
+						info['equal_product_code'].append(equalProdCodes)
 			# No parts found, so part number is zero, send to proceed() function
 			proceed('zero','','')
 		else:
@@ -567,5 +564,5 @@ def parseData(name):
 
 #Use this code to run xpath on the tmp-unzipped files without other scripts
 if __name__ == "__main__":
-	test = parseData("../tmp/tmp-unzipped/HRX/01F99FFF-4CD8-401F-9481-9CAC4E87BA2D.xml")
+	test = parseData("../tmp/tmp-unzipped/HRX/6dc74857-7d8d-4102-a56a-a014934b91b2.xml")
 	print test
