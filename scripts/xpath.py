@@ -58,7 +58,6 @@ def parseData(name):
 	filename = name.split('/')
 	setInfo['file_name'] = filename[1]
 	setInfo['source'] = filename[0]
-	setInfo['dailymed_date'] = time.strftime("%d/%m/%Y")
 
 	def getInfo():
 		# Get information at parent level
