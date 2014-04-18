@@ -520,7 +520,7 @@ def parseData(name):
 					'DEA_SCHEDULE_CODE','DEA_SCHEDULE_NAME','NDC','equal_product_code',
 					'SPL_STRENGTH','part_medicine_name','approval_code'
 					]
-	setInfoNames = ['file_name','effective_time','id_root','dailymed_date','setid','document_type','source']
+	setInfoNames = ['file_name','effective_time','id_root','setid','document_type','source']
 	sponsorNames = ['author','author_type']
 
 	# Loop through prodMedicines as many times as there are unique product codes + part codes combinations, which is len(codes)
