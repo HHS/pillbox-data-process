@@ -20,7 +20,6 @@ dataHeader = [
 		"ndc9",
 		"author",
 		"author_type",
-		"dailymed_date",
 		"effective_time",
 		"DEA_SCHEDULE_CODE",
 		"DEA_SCHEDULE_NAME",
