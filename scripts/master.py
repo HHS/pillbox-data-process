@@ -29,9 +29,8 @@ os.chdir("../tmp/tmp-unzipped/")
 queue = Queue.Queue()
 
 def xmlProcess(fn):
-	global file_count
+
 	try:
-		file_count = file_count + 1
 		# run xpath.py on each file
 		xmlData = parseData(fn)
 
@@ -75,6 +74,8 @@ class ThreadXML(threading.Thread):
 			self.queue.task_done()
 
 def main():
+	global file_count
+	
 	#spawn a pool of threads, and pass them queue instance
 	for i in range(20):
 		t = ThreadXML(queue)
@@ -85,6 +86,7 @@ def main():
 	for d in os.listdir('.'):
 		files = glob.glob('%s/*.xml' % d)
 		for fn in files:
+			file_count = file_count + 1
 			queue.put(fn)
 	#wait on the queue until everything has been processed
 	queue.join()
