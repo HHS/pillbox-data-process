@@ -26,7 +26,6 @@ codeChecks = [
 	"C42992"
 	]
 
-print "processing XML with XPATH..."
 
 def parseData(name):
 	# Iterparse function that clears the memory each time it finishes running

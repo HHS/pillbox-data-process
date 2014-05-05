@@ -11,22 +11,27 @@ import simplejson as json
 from datetime import datetime
 # Import other files
 from xpath import parseData
-from rxnorm import rxNorm
+import rxnorm
 import error
 import makecsv
 import Queue
 import threading
+import requests
 
-
+# Variables, directories, initializations
+print "Starting data processing..."
 master_t0 = time.time()
-
-# Global variables
-masterList = []
 file_count = 0
-
 os.chdir("../tmp/tmp-unzipped/")
-
 queue = Queue.Queue()
+
+# Check internet connection for RXNorm requests
+print "Checking RXNorm connection..."
+try:
+	check = rxnorm.connectionCheck()
+	print check
+except:
+	sys.exit("RXNorm check failed. Check your internet connection.")
 
 def xmlProcess(fn):
 
@@ -35,7 +40,7 @@ def xmlProcess(fn):
 		xmlData = parseData(fn)
 
 		for x in xmlData:
-			rxnormData = rxNorm(x['ndc_codes'])
+			rxnormData = rxnorm.rxNorm(x['ndc_codes'])
 			x['data']['rxcui'] = rxnormData['rxcui']
 			x['data']['rxtty'] = rxnormData['rxtty']
 			x['data']['rxstring'] = rxnormData['rxstring']
@@ -69,17 +74,16 @@ class ThreadXML(threading.Thread):
 			fn = self.queue.get()
 			#grabs file and processes
 			xmlProcess(fn)
-
 			#signals to queue job is done
 			self.queue.task_done()
 
 def main():
 	global file_count
-	
+
 	#spawn a pool of threads, and pass them queue instance
 	for i in range(20):
 		t = ThreadXML(queue)
-		t.setDaemon(True)
+		t.daemon = True
 		t.start()
 
 	#populate queue with data
@@ -88,6 +92,8 @@ def main():
 		for fn in files:
 			file_count = file_count + 1
 			queue.put(fn)
+	print "Processing XML with XPATH..."
+
 	#wait on the queue until everything has been processed
 	queue.join()
 
@@ -96,7 +102,7 @@ main()
 # Calculate the total time and print to console.
 master_t1 = time.time()
 total_time = (master_t1-master_t0)/60
-print file_count, "XML files processed"
+print file_count, "XML files processed."
 error.errorWrite()
 makecsv.closeCSV()
 makecsv.makeDataPackage()
