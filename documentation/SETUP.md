@@ -26,7 +26,7 @@
 
 #### Setting up on Mac OSX
 
-Latest versions of OSX come with Python 2.7 installed. To run the Pillbox process, additional packages need to be installed. This assumes Xcode + command line tools are installed. If not, install Xcode first.
+Latest versions of OSX come with Python 2.7 installed. To run the Pillbox process, additional packages need to be installed. This assumes [Xcode](https://developer.apple.com/xcode/downloads/) & command line tools are installed. If not, install Xcode first.
 
 1. Install pip
 	```

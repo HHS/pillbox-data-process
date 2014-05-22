@@ -1,6 +1,6 @@
 ## Pillbox Data Process
 
-The process is broken into three phases:
+The Pillbox data process uses a series of Python and Shell scripts to download, unzip, and parse the XML data provided by DailyMed. The process is broken into three phases:
 
 1. Download (`download.sh`) and unzip (`unzip.sh`)
 2. Process XML (`master.py`, `xpath.py`, `rxnorm.py`, `error.py`, `makecsv.py`)
@@ -17,14 +17,14 @@ The scripts generate a series of directories under a `/tmp` folder. In addition,
 - wget (if not on Ubuntu)
 - 30+GB of free space
 
+### Using the scripts
+
 #### 1. Download and Unzip
 The download and unzip script will download 16GB from DailyMed and unzip into temporary folders.
 
 To run:
 
 ```
-cd pillbox-data-process
-cd scripts
 ./download.sh
 ./unzip.sh
 ```
