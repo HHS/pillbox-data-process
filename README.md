@@ -7,7 +7,7 @@ Pillbox's primary data source (FDA drug lables) is complex and does not organize
 
 A major function of the initiative was the development of a data process which ingests the source data and produces an easy-to-use, "pill-focused" dataset.
 
-This repository contains the code for that process. It is intended to begin to give developers greater flexibility in using this data as well as expand the scope of and refine the data process. This repository will continue to grow as well as access to the data will continue to improve. 
+This repository contains the code for that process. It is intended to begin to give developers greater flexibility in using this data as well as expand the scope of and refine the data process. This repository will continue to grow as well as access to the data will continue to improve.
 
 ### Get started using or contributing to the code
 
@@ -22,6 +22,6 @@ This repository contains the code for that process. It is intended to begin to g
 
 ### Warning
 
-Pillbox's source data is known to have errors and inconsistencies. Read this document before working with Pillbox's API, data, and images.
+Pillbox's source data is known to have errors and inconsistencies. Read [this document](https://github.com/developmentseed/pillbox-data-api/blob/updates/documentation/DATA.md) before working with Pillbox's API, data, and images.
 
 [Read more about Pillbox](https://github.com/HHS/pillbox-data-process/blob/master/documentation/ABOUT.md).
