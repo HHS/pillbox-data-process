@@ -22,7 +22,7 @@
    git clone git@github.com:HHS/pillbox-data-process.git
    ```
 
-3. Follow [steps for data process](https://github.com/HHS/pillbox-data-process/blob/updates/scripts/README.md).
+3. Follow [steps for data process](https://github.com/HHS/pillbox-data-process/tree/master/scripts#pillbox-data-process).
 
 #### Setting up on Mac OSX
 
@@ -46,4 +46,4 @@ Latest versions of OSX come with Python 2.7 installed. To run the Pillbox proces
 	sudo pip install -r requirements.txt
 	```
 
-4. Follow [steps for data process](https://github.com/HHS/pillbox-data-process/blob/updates/scripts/README.md).
+4. Follow [steps for data process](https://github.com/HHS/pillbox-data-process/tree/master/scripts#pillbox-data-process).
