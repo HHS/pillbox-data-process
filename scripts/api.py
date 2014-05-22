@@ -1,13 +1,16 @@
 #!/usr/bin/python
 
-# Import Python Modules 
+# Import Python Modules
 import os
 import sys
 import time
 import traceback
 import csv
+import shutil
 import simplejson as json
 from datetime import datetime
+
+print "Processing data..."
 
 # Global variables
 authorList = []
@@ -22,13 +25,13 @@ def createIndex():
 		global authorList
 		global author
 
-		if data['data']['name'] not in authorList:
-			authorList.append(data['data']['name'])
-			author[data['data']['name']] = []
+		if data['data']['author'] not in authorList:
+			authorList.append(data['data']['author'])
+			author[data['data']['author']] = []
 
 		# build author objects
-		if data['data']['name'] != "":
-			author[data['data']['name']].append(data['setid_product'])
+		if data['data']['author'] != "":
+			author[data['data']['author']].append(data['setid_product'])
 
 	def colorIndex(data):
 		global colorList
@@ -38,12 +41,12 @@ def createIndex():
 			colorList.append(data['data']['SPLCOLOR'])
 			color[data['data']['SPLCOLOR']] = []
 
-		# build color objects 
+		# build color objects
 		# {'C48325': ['3CAF3F19-96B4-DAE6-35AA-05643BD531D2-58177-001']}
 		if data['data']['SPLCOLOR'] != "":
 			color[data['data']['SPLCOLOR']].append(data['setid_product'])
-	
-	os.chdir("../tmp/processed/")
+
+	os.chdir("../tmp/processed/json/")
 	for fn in os.listdir('.'):
 		if fn.endswith(".json"):
 			data_file = open(fn, "rb").read()
@@ -74,7 +77,7 @@ def indexAPI():
 			"color": "",
 			"spl-id": [],
 			"count": len(n)
-			}		
+			}
 		colorJSON['color'] = c
 		colorJSON['spl-id'] = n
 		colorIndex.append(colorJSON)
@@ -82,11 +85,23 @@ def indexAPI():
 	writeIndex(colorIndex, 'color')
 
 def writeIndex(output, file_name):
-    writeout = json.dumps(output, sort_keys=True, separators=(',',':'))
-    f_out = open('../../api/index/%s.json' % file_name, 'wb')
-    f_out.writelines(writeout)
-    f_out.close()
-		
+	writeout = json.dumps(output, sort_keys=True, separators=(',',':'))
+	f_out = open('../../../api/index/%s.json' % file_name, 'wb')
+	f_out.writelines(writeout)
+	f_out.close()
+	print "%s index files created..." % file_name
+
+def copyProcessed():
+	os.chdir('../csv/')
+	splSRC = ('spl_data.csv')
+	ingredientSRC = ('spl_ingredients.csv')
+	DST = ('../../../api/')
+	shutil.copy(splSRC,DST)
+	print "spl_data.csv copied."
+	shutil.copy(ingredientSRC,DST)
+	print "spl_ingredients.csv copied."
+
 if __name__ == "__main__":
 	createIndex()
 	indexAPI()
+	copyProcessed()
