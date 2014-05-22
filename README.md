@@ -1,16 +1,27 @@
-Pillbox Data API
+Pillbox Data Process
 ================
 
-Pillbox is a database of human prescription, over-the-counter, homeopathic, and veterinary oral solid dosage medications (pills) marketed in the United States of America. This data set contains information about pills such as how they look, their ingredients, and other criteria. This data can be used to identify unknown pills based on their physical appearance. 
+Pillbox, a initative of the National Library of Medicine at the National Institutes of Health, provides data and images for prescription, over-the-counter, homeopathic, and veterinary oral solid dosage medications (pills) marketed in the United States of America. This data set contains information about pills such as how they look, their active and inactive ingredients, and many other criteria. 
 
-### Get started using or contributing to the data 
+Pillbox's primary data source (FDA drug lables) is complex and does not organize information based on individual pills.  Additionally, there are very few pill images available in the soruce data.  The Pillbox initative has focused on resturcturing the source data, incorporating data from other related data sets, and creating a library of pill images.
 
-  - Access the [data]() now. 
-  - [Read more]() about setting up your local environment. 
+A major function of the initiative was the development of a data process which ingests the source data and produces an easy-to-use, "pill-focused" dataset.
+
+This repository contains the code for that process. It is intended to give developers greater flexability in using this data as well as expand the scope of and refine the data process.
+
+### Get started using or contributing to the code
+
+  - [Read more]() about setting up your local environment
   - Start [contributing]() to the development 
 
-### About Pillbox and this repository 
+### Uses of this data
 
-Pillbox is an effort to make the Federal Drug Administration Structured Product Labeling data open and accessible to the general public and developers. This repository is made open to encourage use and development of this data resource. 
+  - Identify unknown pills based on their physical appearance
+  - Assist in development of electronic health records, medication information systems, and adherence/reminder/tracking tools
+  - Support research in areas such as informatics and image processing
+
+### Warning
+
+Pillbox's source data is known to have errors and inconsistencies. Read this document before working with Pillbox's API, data, and images.
 
 [Read more about Pillbox](). 
