@@ -22,9 +22,3 @@ Neither the U.S. government nor any agency thereof, nor any of their employees, 
 ### Terms of Use
 
 Use of this data is subject to the [Terms of Service document]() made available in this repository.
-
-### Pill images
-
-Pillbox currently contains 2,159 pill images. While all of images provided by Pillbox were created through a National Library of Medicine/Food and Drug Administration partnership, most are not yet part of the FDA Structured Product Labels (drug labels) and have not yet been verified by the manufacturer/labeler.
-
-Images are not yet available as a single download but will be sometime in 2014.

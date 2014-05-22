@@ -1,16 +1,27 @@
 ## Pillbox for Developers
 ### Pillbox Data Process
 
-Pillbox is a database of human prescription, over-the-counter, homeopathic, and veterinary oral solid dosage medications (pills) marketed in the United States of America. This data set contains information about pills such as how they look, their ingredients, and other criteria. This data can be used to identify unknown pills based on their physical appearance.
+Pillbox, an initiative of the National Library of Medicine at the National Institutes of Health, provides data and images for prescription, over-the-counter, homeopathic, and veterinary oral solid dosage medications (pills) marketed in the United States of America. This data set contains information about pills such as how they look, their active and inactive ingredients, and many other criteria.
 
-### Get started using or contributing to the data process
+Pillbox's primary data source (FDA drug lables) is complex and does not organize information based on individual pills. Additionally, there are very few pill images available in the source data. The Pillbox initative has focused on restructuring the source data, incorporating data from other related data sets, and creating a library of pill images.
 
-  - [Read more](https://github.com/HHS/pillbox-data-process/blob/master/documentation/SETUP.md) about setting up your local environment.
+A major function of the initiative was the development of a data process which ingests the source data and produces an easy-to-use, "pill-focused" dataset.
+
+This repository contains the code for that process. It is intended to begin to give developers greater flexibility in using this data as well as expand the scope of and refine the data process. This repository will continue to grow as well as access to the data will continue to improve.
+
+### Get started using or contributing to the code
+
+  - [Read more](https://github.com/HHS/pillbox-data-process/blob/master/documentation/SETUP.md) about setting up your local environment
   - Start [contributing](https://github.com/HHS/pillbox-data-process/blob/master/CONTRIBUTING.md) to the development
-  - Download the [raw data](http://pillbox.nlm.nih.gov/developer.html#data), or get an [API key](http://pillbox.nlm.nih.gov/developer.html#api).
 
-### About Pillbox and this repository
+### Uses of this data
 
-Pillbox is an effort to make the Federal Drug Administration Structured Product Labeling data open and accessible to the general public and developers. This repository is made open to encourage use and development of this data resource.
+  - Identify unknown pills based on their physical appearance
+  - Assist in development of electronic health records, medication information systems, and adherence/reminder/tracking tools
+  - Support research in areas such as informatics and image processing
+
+### Warning
+
+Pillbox's source data is known to have errors and inconsistencies. Read [this document](https://github.com/developmentseed/pillbox-data-api/blob/updates/documentation/DATA.md) before working with Pillbox's API, data, and images.
 
 [Read more about Pillbox](https://github.com/HHS/pillbox-data-process/blob/master/documentation/ABOUT.md).
