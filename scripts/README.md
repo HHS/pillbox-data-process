@@ -36,6 +36,8 @@ After the downloading is finished, to process the unzipped XML files, run `maste
 To run:
 
 ```
+cd scripts
+mkdir ../../api
 ./master.py
 ```
 
