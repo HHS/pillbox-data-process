@@ -3,7 +3,7 @@
 
 Pillbox, an initiative of the National Library of Medicine at the National Institutes of Health, provides data and images for prescription, over-the-counter, homeopathic, and veterinary oral solid dosage medications (pills) marketed in the United States of America. This data set contains information about pills such as how they look, their active and inactive ingredients, and many other criteria.
 
-Pillbox's primary data source (FDA drug lables) is complex and does not organize information based on individual pills. Additionally, there are very few pill images available in the source data. The Pillbox initative has focused on restructuring the source data, incorporating data from other related data sets, and creating a library of pill images.
+Pillbox's primary data source (FDA drug labels) is complex and does not organize information based on individual pills. Additionally, there are very few pill images available in the source data. The Pillbox initative has focused on restructuring the source data, incorporating data from other related data sets, and creating a library of pill images.
 
 A major function of the initiative was the development of a data process which ingests the source data and produces an easy-to-use, "pill-focused" dataset.
 
