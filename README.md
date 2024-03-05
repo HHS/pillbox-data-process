@@ -22,6 +22,6 @@ This repository contains the code for that process. It is intended to begin to g
 
 ### Warning
 
-Pillbox's source data is known to have errors and inconsistencies. Read [this document](https://github.com/developmentseed/pillbox-data-api/blob/updates/documentation/DATA.md) before working with Pillbox's API, data, and images.
+Pillbox's source data is known to have errors and inconsistencies. Read [this document](https://github.com/HHS/pillbox-data-process/blob/master/documentation/DATA.md) before working with Pillbox's API, data, and images.
 
 [Read more about Pillbox](https://github.com/HHS/pillbox-data-process/blob/master/documentation/ABOUT.md).
